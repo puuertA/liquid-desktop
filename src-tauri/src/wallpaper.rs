@@ -1,5 +1,7 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::Serialize;
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 use windows::{
     core::PCWSTR,
     Win32::{System::Com::*, UI::Shell::*},
@@ -16,6 +18,22 @@ pub struct Wallpaper {
     pub mode: i32,
     pub color: u32,
     pub monitors: Vec<Monitor>,
+}
+static CACHE: OnceLock<Mutex<Option<(Instant, Wallpaper)>>> = OnceLock::new();
+/// One COM/file read for all requesting widgets in a 15-second interval.
+pub fn read_cached() -> Result<Wallpaper, String> {
+    let mut cache = CACHE
+        .get_or_init(|| Mutex::new(None))
+        .lock()
+        .map_err(|e| e.to_string())?;
+    if let Some((at, wallpaper)) = cache.as_ref() {
+        if at.elapsed() < Duration::from_secs(15) {
+            return Ok(wallpaper.clone());
+        }
+    }
+    let wallpaper = read()?;
+    *cache = Some((Instant::now(), wallpaper.clone()));
+    Ok(wallpaper)
 }
 struct ComGuard;
 impl Drop for ComGuard {

@@ -1,5 +1,17 @@
 # Liquid Desktop — linguagem visual
 
+## Direção 0.4.0
+
+O material deve ter centro limpo, distorção restrita à borda e reflexos de baixa amplitude. Textos ficam em uma camada não refratada. Não há neon, bloom externo ou movimento contínuo. Canopy orienta continuidade de forma e legibilidade; NotchPixel orienta a utilidade das futuras superfícies; a imagem desktop fornecida orienta proporção e organização. Não foram copiados assets desses produtos. O vídeo citado no novo escopo não estava anexado.
+
+Clear, Thin, Regular, Frosted, Dark e Adaptive são parâmetros do mesmo renderer. Frosted difunde a textura antes de refratá-la; não substitui a refração por blur. Espessura 4–40 px, faixa convexa 8–48 px, dispersão 0–0,5, difusão 0–8 px. Refração configura deslocamento máximo 0–40 px. O mapa usa um perfil convexo, não a antiga queda quadrática. A aparência anterior pode mudar mesmo quando o valor salvo de refração é preservado.
+
+Adaptive usa o percentil 85 de uma amostra 32×32 da textura atrás da janela, aumentando o escurecimento sem reduzir o contraste manual. Não mede pixels de aplicações externas. Materiais claros ainda exigem escolha de contraste adequada ao fundo; não se declara contraste acessível garantido para todo wallpaper.
+
+Movimento: mola 19 rad/s, amortecimento 0,82; GSAP sem ticker ativo em repouso. O desenho da textura é acionado por eventos de movimento, DPI, tamanho, visibilidade e preferências, sem consulta periódica de coordenadas. A leitura do wallpaper continua com intervalo de 15 segundos e cache compartilhado. Consulte [MOTION](docs/MOTION.md).
+
+As seções abaixo descrevem as decisões históricas; onde houver divergência, esta direção 0.4.0 prevalece.
+
 A superfície deve parecer uma lente sobre o wallpaper real. Transparência e blur, sozinhos, não atendem ao objetivo.
 
 ## Material

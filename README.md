@@ -1,4 +1,16 @@
-# Liquid Desktop 0.3.0
+# Liquid Desktop 0.4.0
+
+Primeiro incremento do plano [Next Generation](ROADMAP.md): motor óptico e materiais. Os cinco widgets, bandeja, temas sincronizados e inicialização opcional continuam disponíveis. Dynamic Island, Top Bar, Control Center e Dock ainda não estão implementados nesta versão.
+
+## Motor óptico e materiais
+
+No painel, selecione um widget e escolha **Clear**, **Thin**, **Regular**, **Frosted**, **Dark** ou **Adaptive**. A prévia é um estúdio com textura ilustrativa, processada pelo mesmo renderer usado no desktop. Cor e material continuam podendo ser sincronizados entre widgets.
+
+Novos ajustes: espessura óptica, largura da borda convexa, dispersão cromática, difusão da textura e qualidade. O centro da lente permanece neutro e a refração se concentra na borda. O material Adaptive mede a luminosidade da textura estática local para aumentar o contraste; com Wallpaper Engine utiliza o contraste manual. Nenhuma imagem de outras janelas ou vídeo do Wallpaper Engine é capturada.
+
+Modo Econômico reduz a resolução do mapa e usa uma passagem sem dispersão. Equilibrado usa mapas até 384 px; Alta, até 640 px. A resposta elástica usa uma mola interrompível e respeita movimento reduzido. [Detalhes de movimento](docs/MOTION.md). Preferências 0.3.0 são carregadas como material Personalizado, sem substituir cores, posições, notas ou valores anteriores.
+
+A conferência visual no WebView2 permanece pendente por indisponibilidade da automação de interface neste ambiente. Testes e benchmark isolado constam em [validação](docs/VALIDATION.md); não representam uma medição de FPS ou de consumo total do aplicativo.
 
 ## Bandeja, temas e inicialização
 
@@ -12,7 +24,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Feche a versão antiga pelo painel antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.3.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.4.0_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

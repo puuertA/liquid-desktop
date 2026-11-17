@@ -1,4 +1,16 @@
-# Arquitetura — 0.3.0
+# Arquitetura — 0.4.0
+
+## Motor gráfico compartilhado
+
+`glass/optics.mjs` contém SDF, perfil de lente convexa, lookup e rasterização simétrica. `maps.ts` mantém LRU de oito mapas por WebView, indexado por dimensão, raio, espessura, borda e qualidade. Intensidade de refração, cor, iluminação e dispersão não invalidam o mapa. Não há compartilhamento de heap entre janelas WebView2; esse limite é explícito.
+
+`LiquidGlass.tsx` usa IDs de filtro exclusivos e separação RGB opcional sobre uma única textura. Não monta mapa nem canvas no modo animado. A textura estática redesenha por eventos coalescidos em requestAnimationFrame. Eventos de movimento, DPI, resize, retorno à visibilidade e preferências substituem o polling anterior de 33/1.000 ms. Eventos recebidos durante desenho pendente geram um único redesenho posterior. Desmontagem remove listeners, observadores e callbacks.
+
+`wallpaper::read_cached` serializa leitura COM/arquivo sob mutex e guarda o resultado por 15 segundos para todos os widgets. `materials.ts` define seis presets. `spring.mjs` preserva posição e velocidade ao retargeting, e `motion.ts` registra ticker GSAP somente enquanto a superfície se move. O painel usa o mesmo renderer na prévia ilustrativa; não representa pixels do desktop.
+
+Settings ganhou campos aditivos com defaults: material custom, espessura 18, borda 26, dispersão 0,1, difusão 0,35, qualidade balanced e movimento ligado. Schema 2 permanece compatível; valores existentes não são resetados. Sincronização inclui os novos campos e mantém conteúdo/geometria individuais. Backend valida enums, finitude e limites.
+
+O comportamento nativo DesktopWidget não foi substituído. Os papéis FloatingIsland, DesktopBar, Dock e Flyout ainda serão implementados separadamente conforme ROADMAP; a lista de IDs continua restrita aos cinco widgets.
 
 ## Aplicativo em segundo plano
 

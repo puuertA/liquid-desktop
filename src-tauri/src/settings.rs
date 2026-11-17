@@ -17,6 +17,13 @@ pub struct Settings {
     pub show_seconds: bool,
     pub hour24: bool,
     pub note: String,
+    pub material: String,
+    pub thickness: f64,
+    pub bezel: f64,
+    pub dispersion: f64,
+    pub frost: f64,
+    pub quality: String,
+    pub motion: bool,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -36,11 +43,34 @@ impl Default for Settings {
             show_seconds: false,
             hour24: true,
             note: String::new(),
+            material: "custom".into(),
+            thickness: 18.0,
+            bezel: 26.0,
+            dispersion: 0.1,
+            frost: 0.35,
+            quality: "balanced".into(),
+            motion: true,
         }
     }
 }
 impl Settings {
     pub fn validate(&self) -> Result<(), String> {
+        if ![
+            "custom", "clear", "thin", "regular", "frosted", "dark", "adaptive",
+        ]
+        .contains(&self.material.as_str())
+            || !["economy", "balanced", "high"].contains(&self.quality.as_str())
+            || !self.thickness.is_finite()
+            || !(4.0..=40.0).contains(&self.thickness)
+            || !self.bezel.is_finite()
+            || !(8.0..=48.0).contains(&self.bezel)
+            || !self.dispersion.is_finite()
+            || !(0.0..=0.5).contains(&self.dispersion)
+            || !self.frost.is_finite()
+            || !(0.0..=8.0).contains(&self.frost)
+        {
+            return Err("Material óptico fora do intervalo permitido".into());
+        }
         if !(200..=640).contains(&self.width)
             || !(180..=600).contains(&self.height)
             || self.note.len() > 32_000
@@ -138,6 +168,13 @@ impl Layout {
             widget.shade = material.shade;
             widget.refraction = material.refraction;
             widget.static_wallpaper = material.static_wallpaper;
+            widget.material = material.material.clone();
+            widget.thickness = material.thickness;
+            widget.bezel = material.bezel;
+            widget.dispersion = material.dispersion;
+            widget.frost = material.frost;
+            widget.quality = material.quality.clone();
+            widget.motion = material.motion;
         }
         Ok(())
     }
@@ -168,6 +205,29 @@ impl Layout {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn optical_upgrade_preserves_legacy_values_and_rejects_invalid_settings() {
+        let layout=Layout::load(br##"{"version":2,"sync_theme":true,"widgets":{"notes":{"note":"Keep me","tint":"#ff8800","refraction":7,"opacity":0.3,"width":410}}}"##).unwrap();
+        let notes = &layout.widgets["notes"];
+        assert_eq!(notes.material, "custom");
+        assert_eq!(notes.refraction, 7.0);
+        assert_eq!(notes.opacity, 0.3);
+        assert_eq!(notes.width, 410);
+        assert_eq!(notes.note, "Keep me");
+        let mut next = layout.clone();
+        next.widgets.get_mut("notes").unwrap().material = "adaptive".into();
+        next.widgets.get_mut("notes").unwrap().thickness = 30.0;
+        next.sync_material("notes").unwrap();
+        let restored = Layout::load(&serde_json::to_vec(&next).unwrap()).unwrap();
+        assert_eq!(restored.widgets["clock"].thickness, 30.0);
+        assert_eq!(restored.widgets["clock"].material, "adaptive");
+        let mut bad = notes.clone();
+        bad.dispersion = f64::NAN;
+        assert!(bad.validate().is_err());
+        bad = notes.clone();
+        bad.quality = "invalid".into();
+        assert!(bad.validate().is_err());
+    }
     #[test]
     fn sync_preserves_content_geometry_and_survives_reload() {
         let mut layout = Layout::default();

@@ -4,6 +4,9 @@ export type Settings = {
   x:number; y:number; width:number; height:number; enabled:boolean;
   refraction:number; opacity:number; edit:boolean; static_wallpaper:boolean;
   tint:string; shine:number; shade:number; show_seconds:boolean; hour24:boolean; note:string;
+  material:'custom'|'clear'|'thin'|'regular'|'frosted'|'dark'|'adaptive';
+  thickness:number; bezel:number; dispersion:number; frost:number;
+  quality:'economy'|'balanced'|'high'; motion:boolean;
 };
 export type Layout = {version:number; sync_theme:boolean; widgets:Record<WidgetId,Settings>};
 export type Monitor = {id:string;rect:[number,number,number,number];image:string|null;error:string|null};

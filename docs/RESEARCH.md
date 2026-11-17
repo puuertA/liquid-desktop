@@ -19,6 +19,18 @@ SVG não amostra pixels de outras janelas. `backdrop-filter` do WebView2 não é
 
 O código original deste projeto usa MIT. Dependências mantêm suas respectivas licenças; revisar inventário e notices antes de distribuição pública.
 
+## Next Generation — referências de 17/11/2026
+
+- [NotchPixel](https://notchpixel.com): referência funcional para cápsula/notch que expande ao interagir e reúne atividades do Windows. O produto anuncia integrações variadas; isso não comprova que essas APIs já estejam disponíveis no Liquid Desktop.
+- [Canopy](https://getcanopy.pro): referência visual para continuidade entre cápsula e player, hierarquia curta e capa compartilhada. É um produto macOS; não foi tratado como implementação portátil para Windows.
+- [QuickLiquid](https://github.com/amarnath3003/quickLiquid), [notas ópticas](https://github.com/amarnath3003/quickLiquid/blob/master/packages/quick-liquid/PHYSICS.md), core/engine.ts e animations/spring.ts: estudados perfil convexo, normalização, cache, dispersão e continuidade de velocidade. Decisão: adaptar as técnicas ao canvas de wallpaper já existente; não instalar outro engine DOM nem assumir acesso ao compositor do Windows. Aviso MIT preservado em docs/licenses/QuickLiquid.txt e incluído no bundle.
+
+Apenas o texto veio no novo anexo. A imagem de desktop da conversa anterior continua referência de composição; vídeo não analisado por indisponibilidade do arquivo. A automação de navegador não expôs superfícies e o helper nativo retornou pipe indisponível, portanto nenhuma inspeção visual dos novos materiais foi registrada como concluída.
+
+## Captura e composição — limites
+
+O modo estático lê a imagem autorizada por IDesktopWallpaper. Translucidez sobre Wallpaper Engine não é refração de vídeo. Overlays sobre aplicativos exigem fonte externa de textura: estudar Windows Graphics Capture/DWM separadamente, com recurso opt-in, exclusão da própria superfície, respeito a conteúdo protegido e medição de cópia GPU. Nenhum serviço de captura foi adicionado à 0.4.0. AppBars, GSMTC e Core Audio pertencem às próximas fases; não há comandos fictícios ou permissões ampliadas nesta entrega.
+
 ## Bandeja — 0.3.0
 
 Bandeja e menu seguem a API oficial [System Tray do Tauri](https://v2.tauri.app/learn/system-tray/). O registro de inicialização usa windows-registry em HKCU explicitamente, evitando o modo Dynamic da dependência auto-launch, que tenta configuração para todos os usuários quando o processo está elevado. Nenhuma escrita no Registro é feita durante a compilação.

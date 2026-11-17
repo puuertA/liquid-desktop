@@ -3,6 +3,8 @@ import {invoke,isTauri} from '@tauri-apps/api/core';
 import {listen} from '@tauri-apps/api/event';
 import {widgetIds,type Layout,type Settings,type WidgetId} from '../types';
 import {catalog,WidgetIcon} from '../widgets/catalog';
+import {materials,materialPatch} from '../glass/materials';
+import {MaterialPreview} from '../glass/MaterialPreview';
 
 function NumberField({label,value,min,max,onCommit}:{label:string;value:number;min:number;max:number;onCommit:(v:number)=>void}) {
   const [draft,setDraft]=useState(String(value));
@@ -33,7 +35,7 @@ export function Panel() {
   async function toggle(id:WidgetId){if(!layout)return;setBusy(id);setError('');try{await queue.current;await invoke(layout.widgets[id].enabled?'remove_widget':'create_widget',{id});await reload()}catch(e){setError(String(e))}finally{setBusy(null)}}
   async function applicationAction(action:()=>Promise<unknown>){setAppBusy(true);try{await queue.current;await action();setError('')}catch(e){setError(String(e))}finally{setAppBusy(false)}}
   const settings=layout?.widgets[selected],meta=catalog[selected];
-  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.3.0</span></header>
+  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.4.0</span></header>
     {error&&<div className="error" role="alert">{error}<button className="dismiss-error" aria-label="Fechar aviso" onClick={()=>setError('')}>×</button></div>}
     <section className="app-options" aria-label="Configurações gerais">
       <div><strong>Aplicativo</strong><small>Fechar ou minimizar mantém os widgets ativos. Use a bandeja para abrir ou sair.</small></div>
@@ -54,6 +56,8 @@ export function Panel() {
         {selected==='notes'&&<p className="mode-help contextual-note">Digite na nota diretamente no desktop. O texto é salvo localmente a cada alteração. Limite: 8.000 caracteres.</p>}
         {selected==='system'&&<p className="mode-help contextual-note">CPU, RAM e rede são lidas no Windows a cada 2 segundos. Os gráficos começam vazios e guardam até 30 amostras reais. A rede soma interfaces, incluindo VPNs.</p>}
         <section className="inspector-section"><h3>Material</h3>
+          <MaterialPreview settings={settings}/>
+          <div className="material-presets">{Object.entries(materials).map(([id,material])=><button key={id} aria-pressed={settings.material===id} title={material.description} onClick={()=>patch(materialPatch(id as keyof typeof materials))}><strong>{material.name}</strong><small>{material.description}</small></button>)}</div>
           <label className="toggle"><input type="checkbox" checked={layout?.sync_theme??false} disabled={appBusy||saving} onChange={e=>{const enabled=e.target.checked;void applicationAction(()=>invoke('set_theme_sync',{id:selected,enabled}))}}/> Sincronizar tema de todos os widgets</label>
           <p className="mode-help">Ao ativar, o material deste widget vale para todos, inclusive os ocultos. Depois, qualquer mudança de cor ou efeito será compartilhada.</p>
           <div className="theme-presets">{[
@@ -62,10 +66,17 @@ export function Panel() {
             {name:'Esmeralda',tint:'#98c7b4',opacity:.25,shine:.7,shade:.45},
             {name:'Âmbar',tint:'#e8baa5',opacity:.25,shine:.8,shade:.42}
           ].map(({name,...material})=><button className="widget-toggle" key={name} onClick={()=>patch(material)}>{name}</button>)}</div><div className="color-control"><label htmlFor="glass-color">Cor</label><input id="glass-color" type="color" value={settings.tint} onChange={e=>patch({tint:e.target.value})}/><span>{settings.tint.toUpperCase()}</span><div className="swatches">{['#b9d5e8','#ffffff','#98c7b4','#e8baa5','#a5a8e8','#e38585'].map(tint=><button key={tint} aria-label={`Cor ${tint}`} title={tint} style={{background:tint}} onClick={()=>patch({tint})}/>)}</div></div>
-          <Range label="Intensidade da cor" value={settings.opacity} max={.6} onChange={opacity=>patch({opacity})}/><Range label="Reflexos e espessura" value={settings.shine} onChange={shine=>patch({shine})}/><Range label="Contraste de leitura" value={settings.shade} min={.2} max={.75} onChange={shade=>patch({shade})}/>
+          <Range label="Intensidade da cor" value={settings.opacity} max={.6} onChange={opacity=>patch({opacity})}/><Range label="Reflexos especulares" value={settings.shine} onChange={shine=>patch({shine})}/><Range label="Contraste de leitura" value={settings.shade} min={.2} max={.75} onChange={shade=>patch({shade})}/>
+          <Range label="Espessura óptica" value={settings.thickness} min={4} max={40} step={1} suffix=" px" onChange={thickness=>patch({thickness,material:'custom'})}/>
+          <Range label="Largura da borda convexa" value={settings.bezel} min={8} max={48} step={1} suffix=" px" onChange={bezel=>patch({bezel,material:'custom'})}/>
+          <Range label="Separação cromática" value={settings.dispersion} max={.5} onChange={dispersion=>patch({dispersion})}/>
+          <Range label="Difusão da textura" value={settings.frost} max={8} step={.25} suffix=" px" onChange={frost=>patch({frost})}/>
+          <label className="quality-control">Qualidade óptica<select value={settings.quality} onChange={e=>patch({quality:e.target.value as Settings['quality']})}><option value="economy">Econômica · sem dispersão</option><option value="balanced">Equilibrada</option><option value="high">Alta</option></select></label>
+          <label className="toggle"><input type="checkbox" checked={settings.motion} onChange={e=>patch({motion:e.target.checked})}/> Resposta elástica ao toque</label>
           <label className="toggle wallpaper-mode"><input type="checkbox" checked={!settings.static_wallpaper} onChange={e=>patch({static_wallpaper:!e.target.checked})}/> Fundo animado / Wallpaper Engine</label>
           <Range label="Refração estática" value={settings.refraction} max={40} step={1} suffix=" px" disabled={!settings.static_wallpaper} onChange={refraction=>patch({refraction})}/>
           <p className="mode-help">{settings.static_wallpaper?'A lente usa a imagem estática configurada no Windows.':'Transparência sobre o fundo animado, sem copiar uma imagem antiga.'}</p>
+          {settings.material==='adaptive'&&<p className="mode-help">{settings.static_wallpaper?'O contraste acompanha a luminosidade da região atrás deste widget.':'Adaptive conserva o contraste manual: o vídeo do Wallpaper Engine não é capturado.'}</p>}
         </section><footer className="inspector-footer"><span className="status-dot"/>{saving?'Salvando…':'Preferências salvas neste computador'}</footer>
       </>}
     </section></div>

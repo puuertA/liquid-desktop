@@ -116,7 +116,7 @@ fn get_settings(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<S
 }
 #[tauri::command]
 async fn get_wallpaper() -> Result<wallpaper::Wallpaper, String> {
-    tauri::async_runtime::spawn_blocking(wallpaper::read)
+    tauri::async_runtime::spawn_blocking(wallpaper::read_cached)
         .await
         .map_err(|e| e.to_string())?
 }
@@ -185,6 +185,13 @@ fn update_widget(
             "shade",
             "show_seconds",
             "hour24",
+            "material",
+            "thickness",
+            "bezel",
+            "dispersion",
+            "frost",
+            "quality",
+            "motion",
         ]
         .contains(&key.as_str())
         {
@@ -409,7 +416,9 @@ fn update_drag(app: tauri::AppHandle, window: tauri::WebviewWindow) -> Result<()
         drag.hwnd,
         drag.origin[0] + cursor[0] - drag.cursor[0],
         drag.origin[1] + cursor[1] - drag.cursor[1],
-    )
+    )?;
+    app.emit_to(id, "surface-moved", ())
+        .map_err(|e| e.to_string())
 }
 #[tauri::command]
 fn finish_drag(
@@ -428,7 +437,9 @@ fn finish_drag(
         session.take().unwrap()
     };
     if cancel {
-        native::move_to(drag.hwnd, drag.origin[0], drag.origin[1])?
+        native::move_to(drag.hwnd, drag.origin[0], drag.origin[1])?;
+        app.emit_to(id, "surface-moved", ())
+            .map_err(|e| e.to_string())?;
     }
     let rect = native::rect(drag.hwnd)?;
     let mut layout = state.layout.lock().unwrap();

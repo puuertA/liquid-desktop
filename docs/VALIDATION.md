@@ -1,5 +1,26 @@
 # Validação
 
+## Versão 0.4.0 — primeiro incremento do motor óptico
+
+- Build Rust release e instalador NSIS concluídos: `Liquid Desktop_0.4.0_x64-setup.exe` (2,13 MiB), com aviso de licença QuickLiquid incluído nos recursos.
+
+- Passaram 17 testes JavaScript (incluindo neutralidade do centro, simetria, refração para dentro, limites de resolução, luminância e continuidade/convergência da mola).
+- Passaram 10 testes Rust, incluindo todos os testes nativos/hardware opt-in fora do sandbox: moldura/arraste, ordem de múltiplos widgets, contadores reais e migração óptica sem perda de notas/geometria. O teste de migração valida campos inválidos e sincronização dos novos parâmetros.
+- TypeScript e Vite passaram. Não foram habilitados novos privilégios IPC.
+- Benchmark reprodutível: `node scripts/benchmark-optics.mjs`, Node 24.15/Windows, 40 amostras após aquecimento. Somente rasterização CPU, excluindo PNG, WebView/GPU, IPC e composição.
+
+| Tamanho | 0.3.0 mediana | 0.4.0 equilibrado mediana | Alta mediana |
+|---|---:|---:|---:|
+| 360×220 | 2,036 ms | 0,805 ms | 0,808 ms |
+| 380×340 | 3,269 ms | 1,121 ms | 1,125 ms |
+| 640×600 | 8,795 ms | 1,019 ms | 2,113 ms |
+
+Não extrapolar esses números para FPS. Custo de três passagens RGB, memória de múltiplos WebViews e consumo total antes/depois ainda precisam de medição no aplicativo instalado.
+
+Bloqueio de conferência visual: CUA retornou inventário vazio; Computer Use retornou `native pipe unavailable (os error 2)`. Não foi substituída essa validação por alegações de screenshots. A prévia usa o renderer real, mas ainda precisa de inspeção no WebView2.
+
+Checklist pendente: comparar os seis materiais em fundo claro/escuro, arrastar e cancelar com Esc em modo estático, alternar Wallpaper Engine sem textura antiga, reduzir movimento, redimensionar nos limites, DPI misto e cinco widgets ativos. Preservar a fase visual como pendente até essa conferência. Fusão/metaballs e morphing da ilha não foram implementados neste incremento.
+
 ## Versão 0.3.0 — bandeja, temas e inicialização
 
 - Build Rust release e instalador NSIS concluídos: `Liquid Desktop_0.3.0_x64-setup.exe` (2,11 MiB).
