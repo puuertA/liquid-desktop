@@ -1,0 +1,12 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {widgetIds, type WidgetId} from './types';
+import {Panel} from './panel/Panel';
+import {WidgetWindow} from './widgets/WidgetWindow';
+import './style.css';
+import './widgets/widgets.css';
+import './panel/panel.css';
+const selected = new URLSearchParams(location.search).get('widget');
+const id = widgetIds.includes(selected as WidgetId) ? selected as WidgetId : null;
+document.documentElement.dataset.surface = id ? 'widget' : 'panel';
+createRoot(document.getElementById('root')!).render(<React.StrictMode>{id?<WidgetWindow id={id}/>:<Panel/>}</React.StrictMode>);

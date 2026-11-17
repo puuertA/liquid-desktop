@@ -1,0 +1,429 @@
+//! Shell attachment is experimental. Never changes Explorer styles or files.
+use std::ffi::c_void;
+type Hwnd = *mut c_void;
+type SubclassProc = unsafe extern "system" fn(Hwnd, u32, usize, isize, usize, usize) -> isize;
+const BORDERLESS_SUBCLASS: usize = 0x4c474c53;
+#[link(name = "comctl32")]
+unsafe extern "system" {
+    fn SetWindowSubclass(hwnd: Hwnd, callback: SubclassProc, id: usize, data: usize) -> i32;
+    fn RemoveWindowSubclass(hwnd: Hwnd, callback: SubclassProc, id: usize) -> i32;
+    fn DefSubclassProc(hwnd: Hwnd, message: u32, wparam: usize, lparam: isize) -> isize;
+}
+
+unsafe extern "system" fn borderless_proc(
+    hwnd: Hwnd,
+    message: u32,
+    wparam: usize,
+    lparam: isize,
+    id: usize,
+    _: usize,
+) -> isize {
+    match message {
+        0x0083 => 0, // WM_NCCALCSIZE: the entire window is client area, both forms.
+        0x0085 => 0, // WM_NCPAINT: no OS caption to draw.
+        // Let Tao update focus, but tell DefWindowProc not to repaint the caption.
+        0x0086 => DefSubclassProc(hwnd, message, wparam, -1),
+        0x0082 => {
+            // WM_NCDESTROY: release hook, preserve the original teardown.
+            RemoveWindowSubclass(hwnd, borderless_proc, id);
+            DefSubclassProc(hwnd, message, wparam, lparam)
+        }
+        _ => DefSubclassProc(hwnd, message, wparam, lparam),
+    }
+}
+
+/// Must run on the HWND's owning UI thread, never an async worker.
+fn install_borderless_frame(hwnd: isize) -> Result<(), String> {
+    unsafe {
+        let h = hwnd as Hwnd;
+        if SetWindowSubclass(h, borderless_proc, BORDERLESS_SUBCLASS, 0) == 0 {
+            return Err(
+                "Não foi possível instalar o tratamento da moldura na thread da janela".into(),
+            );
+        }
+        if SetWindowPos(
+            h,
+            std::ptr::null_mut(),
+            0,
+            0,
+            0,
+            0,
+            0x1 | 0x2 | 0x4 | 0x10 | 0x20,
+        ) == 0
+        {
+            return Err("Não foi possível recalcular a área sem título".into());
+        }
+        Ok(())
+    }
+}
+#[repr(C)]
+#[derive(Default)]
+struct Rect {
+    left: i32,
+    top: i32,
+    right: i32,
+    bottom: i32,
+}
+#[repr(C)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+#[link(name = "user32")]
+unsafe extern "system" {
+    fn FindWindowW(class: *const u16, name: *const u16) -> Hwnd;
+    fn FindWindowExW(parent: Hwnd, after: Hwnd, class: *const u16, name: *const u16) -> Hwnd;
+
+    #[cfg(test)]
+    fn GetParent(child: Hwnd) -> Hwnd;
+    fn GetTopWindow(parent: Hwnd) -> Hwnd;
+    fn GetWindow(hwnd: Hwnd, command: u32) -> Hwnd;
+    fn GetClassNameW(hwnd: Hwnd, buffer: *mut u16, length: i32) -> i32;
+    fn IsWindowVisible(hwnd: Hwnd) -> i32;
+    fn IsWindow(hwnd: Hwnd) -> i32;
+    fn GetWindowLongPtrW(hwnd: Hwnd, index: i32) -> isize;
+    fn SetWindowLongPtrW(hwnd: Hwnd, index: i32, value: isize) -> isize;
+    fn SetWindowPos(hwnd: Hwnd, after: Hwnd, x: i32, y: i32, w: i32, h: i32, flags: u32) -> i32;
+    fn GetWindowRect(hwnd: Hwnd, rect: *mut Rect) -> i32;
+
+    fn SetWindowRgn(hwnd: Hwnd, region: Hwnd, redraw: i32) -> i32;
+    fn GetPhysicalCursorPos(point: *mut Point) -> i32;
+}
+#[link(name = "gdi32")]
+unsafe extern "system" {
+    fn CreateRoundRectRgn(l: i32, t: i32, r: i32, b: i32, w: i32, h: i32) -> Hwnd;
+    fn DeleteObject(object: Hwnd) -> i32;
+}
+fn wide(s: &str) -> Vec<u16> {
+    s.encode_utf16().chain(Some(0)).collect()
+}
+pub fn probe() -> bool {
+    unsafe { !desktop_host().is_null() }
+}
+unsafe fn desktop_host() -> Hwnd {
+    let null = std::ptr::null_mut();
+    let has_icons = |p: Hwnd| {
+        !p.is_null()
+            && !FindWindowExW(p, null, wide("SHELLDLL_DefView").as_ptr(), std::ptr::null())
+                .is_null()
+    };
+    let progman = FindWindowW(wide("Progman").as_ptr(), std::ptr::null());
+    if has_icons(progman) {
+        return progman;
+    }
+    // Only the existing icon-bearing WorkerW is eligible, never the wallpaper layer.
+    let mut worker = null;
+    loop {
+        worker = FindWindowExW(null, worker, wide("WorkerW").as_ptr(), std::ptr::null());
+        if worker.is_null() || has_icons(worker) {
+            return worker;
+        }
+    }
+}
+/// A top-level tool window survives changes to Wallpaper Engine's WorkerW tree.
+/// Never reparent the Tauri HWND: its runtime expects a top-level window.
+pub fn configure_desktop_window(hwnd: isize) -> Result<String, String> {
+    unsafe {
+        let h = hwnd as Hwnd;
+        if IsWindow(h) == 0 {
+            return Err("HWND do widget inválido".into());
+        }
+        let style = GetWindowLongPtrW(h, -16);
+        if style & 0x40000000 != 0 {
+            return Err("O widget deve ser uma janela independente".into());
+        }
+        let ex = GetWindowLongPtrW(h, -20);
+        SetWindowLongPtrW(h, -20, (ex | 0x80) & !0x40000);
+        install_borderless_frame(hwnd)?;
+        remove_frame(hwnd)?;
+        // Explicitly non-topmost: desktop widgets must remain below regular apps.
+        if SetWindowPos(h, -2isize as Hwnd, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010) == 0 {
+            return Err("Não foi possível configurar a camada do widget".into());
+        }
+        Ok("Janela independente · compatibilidade com fundos animados".into())
+    }
+}
+
+/// Clear native caption/buttons and request a non-client recalculation.
+/// Some shell/window managers restore these styles after the window is shown.
+pub fn remove_frame(hwnd: isize) -> Result<(), String> {
+    unsafe {
+        let h = hwnd as Hwnd;
+        if IsWindow(h) == 0 {
+            return Err("Widget indisponível".into());
+        }
+        let style = GetWindowLongPtrW(h, -16);
+        let ex = GetWindowLongPtrW(h, -20);
+        let borderless = style & !(0x00c00000 | 0x00040000 | 0x00080000 | 0x00030000);
+        let clean_ex = (ex | 0x80) & !(0x00040000 | 0x00000100 | 0x00000200 | 0x00020000 | 0x1);
+        if borderless != style || clean_ex != ex {
+            SetWindowLongPtrW(h, -16, borderless);
+            SetWindowLongPtrW(h, -20, clean_ex);
+            if SetWindowPos(
+                h,
+                std::ptr::null_mut(),
+                0,
+                0,
+                0,
+                0,
+                0x1 | 0x2 | 0x4 | 0x10 | 0x20,
+            ) == 0
+            {
+                return Err("Não foi possível remover a moldura nativa".into());
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Insert immediately above the first visible shell surface, below normal apps.
+/// Only the widget is repositioned; no Explorer/Wallpaper Engine HWND is mutated.
+pub fn maintain_desktop_layer(hwnd: isize) -> Result<(), String> {
+    maintain_desktop_layers(&[hwnd])
+}
+/// Order the widget group together so multiple widgets do not cyclically raise
+/// one another on every maintenance tick.
+pub fn maintain_desktop_layers(handles: &[isize]) -> Result<(), String> {
+    if handles.is_empty() {
+        return Ok(());
+    }
+    for &handle in handles {
+        remove_frame(handle)?;
+    }
+    unsafe {
+        let mut current = GetTopWindow(std::ptr::null_mut());
+        let mut previous: Hwnd = std::ptr::null_mut();
+        let mut count = 0;
+        while !current.is_null() && count < 4096 {
+            count += 1;
+            if !handles.contains(&(current as isize)) && IsWindowVisible(current) != 0 {
+                let mut class = [0u16; 256];
+                let length = GetClassNameW(current, class.as_mut_ptr(), class.len() as i32);
+                let name = String::from_utf16_lossy(&class[..length.max(0) as usize]);
+                if name == "Progman" || name == "WorkerW" {
+                    let mut after =
+                        if previous.is_null() || GetWindowLongPtrW(previous, -20) & 0x8 != 0 {
+                            -2isize as Hwnd
+                        } else {
+                            previous
+                        };
+                    for &handle in handles {
+                        let h = handle as Hwnd;
+                        if SetWindowPos(h, after, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010 | 0x0200)
+                            == 0
+                        {
+                            return Err("Falha ao ordenar widgets sobre o desktop".into());
+                        }
+                        after = h;
+                    }
+                    return Ok(());
+                }
+                previous = current;
+            }
+            current = GetWindow(current, 2);
+        }
+        Err("Superfície do desktop não encontrada; widgets mantidos como janelas normais".into())
+    }
+}
+pub fn place(hwnd: isize, x: i32, y: i32, w: i32, h: i32, radius: i32) -> Result<(), String> {
+    unsafe {
+        let hwnd = hwnd as Hwnd;
+        if IsWindow(hwnd) == 0 {
+            return Err("HWND do widget inválido".into());
+        }
+        if SetWindowPos(
+            hwnd,
+            std::ptr::null_mut(),
+            x,
+            y,
+            w,
+            h,
+            0x0004 | 0x0010 | 0x0020,
+        ) == 0
+        {
+            return Err("SetWindowPos falhou".into());
+        }
+        let region = CreateRoundRectRgn(0, 0, w + 1, h + 1, radius * 2, radius * 2);
+        if region.is_null() {
+            return Err("CreateRoundRectRgn falhou".into());
+        }
+        if SetWindowRgn(hwnd, region, 1) == 0 {
+            DeleteObject(region);
+            return Err("SetWindowRgn falhou".into());
+        }
+        Ok(())
+    }
+}
+pub fn rect(hwnd: isize) -> Result<[i32; 4], String> {
+    unsafe {
+        let mut r = Rect::default();
+        if IsWindow(hwnd as Hwnd) == 0 || GetWindowRect(hwnd as Hwnd, &mut r) == 0 {
+            return Err("Widget indisponível".into());
+        }
+        Ok([r.left, r.top, r.right - r.left, r.bottom - r.top])
+    }
+}
+
+/// Top-level HWNDs use screen coordinates. A null parent is valid and expected.
+pub fn move_to(hwnd: isize, x: i32, y: i32) -> Result<(), String> {
+    unsafe {
+        let h = hwnd as Hwnd;
+        if IsWindow(h) == 0 {
+            return Err("HWND do widget foi destruído".into());
+        }
+        if SetWindowPos(
+            h,
+            std::ptr::null_mut(),
+            x,
+            y,
+            0,
+            0,
+            0x0001 | 0x0004 | 0x0010,
+        ) == 0
+        {
+            return Err(format!(
+                "Falha ao mover widget: {}",
+                std::io::Error::last_os_error()
+            ));
+        }
+        Ok(())
+    }
+}
+pub fn cursor() -> Result<[i32; 2], String> {
+    unsafe {
+        let mut point = Point { x: 0, y: 0 };
+        if GetPhysicalCursorPos(&mut point) == 0 {
+            return Err("Não foi possível ler a posição do cursor".into());
+        }
+        Ok([point.x, point.y])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[link(name = "user32")]
+    unsafe extern "system" {
+        fn CreateWindowExW(
+            ex: u32,
+            class: *const u16,
+            title: *const u16,
+            style: u32,
+            x: i32,
+            y: i32,
+            width: i32,
+            height: i32,
+            parent: Hwnd,
+            menu: Hwnd,
+            instance: Hwnd,
+            parameter: Hwnd,
+        ) -> Hwnd;
+        fn DestroyWindow(hwnd: Hwnd) -> i32;
+        fn GetClientRect(hwnd: Hwnd, rect: *mut Rect) -> i32;
+        fn ClientToScreen(hwnd: Hwnd, point: *mut Point) -> i32;
+    }
+    struct TestWindow(Hwnd);
+    impl Drop for TestWindow {
+        fn drop(&mut self) {
+            unsafe {
+                DestroyWindow(self.0);
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "Creates only a hidden independent test HWND"]
+    fn independent_widget_moves_without_explorer_parent() {
+        let null = std::ptr::null_mut();
+        let h = unsafe {
+            CreateWindowExW(
+                0x80,
+                wide("STATIC").as_ptr(),
+                wide("Liquid Desktop hidden test").as_ptr(),
+                0x80000000,
+                100,
+                100,
+                360,
+                220,
+                null,
+                null,
+                null,
+                null,
+            )
+        };
+        assert!(!h.is_null(), "Could not create hidden test HWND");
+        let _cleanup = TestWindow(h);
+        let hwnd = h as isize;
+        configure_desktop_window(hwnd).expect("configure independent window");
+        unsafe {
+            SetWindowLongPtrW(h, -16, GetWindowLongPtrW(h, -16) | 0x00cf0000);
+            // Even if an external theme restores caption bits, reserve NO title strip.
+            SetWindowPos(h, null, 0, 0, 0, 0, 0x1 | 0x2 | 0x4 | 0x10 | 0x20);
+        }
+        let outer = rect(hwnd).unwrap();
+        let mut client = Rect::default();
+        let mut origin = Point { x: 0, y: 0 };
+        assert_ne!(unsafe { GetClientRect(h, &mut client) }, 0);
+        assert_ne!(unsafe { ClientToScreen(h, &mut origin) }, 0);
+        assert_eq!(
+            [origin.x, origin.y, client.right, client.bottom],
+            outer,
+            "regression: caption must consume zero pixels, even when style flags return"
+        );
+        remove_frame(hwnd).expect("remove restored native caption");
+        assert_eq!(unsafe { GetWindowLongPtrW(h, -16) } & 0x00cf0000, 0);
+        assert!(
+            unsafe { GetParent(h) }.is_null(),
+            "regression: a null parent must be supported"
+        );
+        place(hwnd, 100, 100, 360, 220, 32).expect("initial placement");
+        let initial = rect(hwnd).unwrap();
+        cursor().expect("physical cursor read");
+        move_to(hwnd, initial[0] + 140, initial[1] + 80).expect("drag movement");
+        assert_eq!(
+            rect(hwnd).unwrap(),
+            [initial[0] + 140, initial[1] + 80, initial[2], initial[3]]
+        );
+        move_to(hwnd, initial[0], initial[1]).expect("cancel movement");
+        assert_eq!(rect(hwnd).unwrap(), initial);
+    }
+
+    #[test]
+    #[ignore = "Requires desktop shell; creates two hidden test HWNDs only"]
+    fn multiple_widgets_keep_the_same_relative_order() {
+        let null = std::ptr::null_mut();
+        let make = || {
+            let h = unsafe {
+                CreateWindowExW(
+                    0x80,
+                    wide("STATIC").as_ptr(),
+                    wide("Liquid group test").as_ptr(),
+                    0x80000000,
+                    100,
+                    100,
+                    240,
+                    220,
+                    null,
+                    null,
+                    null,
+                    null,
+                )
+            };
+            assert!(!h.is_null());
+            configure_desktop_window(h as isize).unwrap();
+            TestWindow(h)
+        };
+        let first = make();
+        let second = make();
+        let handles = [first.0 as isize, second.0 as isize];
+        maintain_desktop_layers(&handles).unwrap();
+        assert_eq!(unsafe { GetWindow(first.0, 2) }, second.0);
+        maintain_desktop_layers(&handles).unwrap();
+        assert_eq!(unsafe { GetWindow(first.0, 2) }, second.0);
+        assert_eq!(
+            unsafe { GetWindowLongPtrW(first.0, -20) } & 0x8,
+            0,
+            "must never become topmost"
+        );
+    }
+}

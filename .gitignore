@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.tools/
+src-tauri/target/
+*.log
+liquid-desktop-diagnostics.json
+src-tauri/gen/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
