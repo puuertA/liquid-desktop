@@ -208,6 +208,7 @@ pub fn place(
     window: &tauri::WebviewWindow,
     config: &Config,
 ) -> Result<(), String> {
+    crate::workarea::refresh(app);
     let monitors = window.available_monitors().map_err(|e| e.to_string())?;
     let monitor = monitors
         .get(config.monitor)
@@ -219,7 +220,7 @@ pub fn place(
     native::position_surface(
         handle(window)?,
         pos.x + (size.width as i32 - (480.0 * scale) as i32) / 2,
-        pos.y
+        pos.y + crate::workarea::offset(pos.x,pos.y)
             + if config.form == "notch" {
                 0
             } else {
@@ -229,7 +230,6 @@ pub fn place(
         (340.0 * scale) as i32,
         config.above_apps,
     )?;
-    let _ = app;
     Ok(())
 }
 pub fn create(app: &tauri::AppHandle) -> Result<(), String> {
@@ -343,7 +343,7 @@ pub fn maintain(app: &tauri::AppHandle) {
             }
             let expected = [
                 p.x + (s.width as i32 - (480.0 * scale) as i32) / 2,
-                p.y + if config.form == "notch" {
+                p.y + crate::workarea::offset(p.x,p.y) + if config.form == "notch" {
                     0
                 } else {
                     (12.0 * scale) as i32

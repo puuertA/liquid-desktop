@@ -28,7 +28,9 @@ Escopo de referência da fase:
 
 Primeiro incremento 0.6.0: Top Bar opt-in em um monitor selecionado, 36 unidades lógicas, data/hora, métricas compartilhadas com o widget Sistema, volume/mute Core Audio e acesso ao painel. Cor/opacidade, módulos visíveis, segundos, camada e ocultação em fullscreen configuráveis. Reserva central física e visual para a ilha no mesmo monitor; fallback de monitor e redução de detalhes em larguras menores. Sem Acrylic. Migração e geometria cobertas por testes; inspeção visual e matriz de DPI/fullscreen continuam pendentes.
 
-Ainda pendentes nesta fase: múltiplas barras simultâneas, reordenação, Control Center/flyouts, energia, conectividade, processo ativo e AppBar. O escopo abaixo é a meta da fase, não uma lista de recursos já entregues.
+Incremento 0.6.1: AppBar automática por monitor ocupado, compartilhada pela barra e ilha. Reserva estável em unidades lógicas, negociação com outras barras, liberação ao desativar/sair e tratamento de reinício do Explorer. A ativação automática foi solicitada pelo usuário, substituindo o padrão desligado do escopo original.
+
+Ainda pendentes nesta fase: múltiplas barras simultâneas, reordenação, Control Center/flyouts, energia, conectividade e processo ativo. O escopo abaixo é a meta da fase, não uma lista de recursos já entregues.
 
 DesktopBar por monitor, 28–42 unidades lógicas, módulos reordenáveis, transparência e ocultação. Integrar ilha sem duplicar seus serviços. Flyout ancorado ao controle de origem. Usar informações reais de áudio, energia, conectividade e processo ativo; APIs indisponíveis mostram estado/atalho legítimo. AppBar para reserva opcional de espaço, desligada por padrão.
 

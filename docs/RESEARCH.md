@@ -56,3 +56,7 @@ A captura do usuário demonstrou que limpar os bits de estilo não bastava. Conf
 ## Vidro nativo — 0.5.1
 
 [Tauri: efeitos e limitações de Acrylic](https://v2.tauri.app/reference/config/). [Microsoft: DwmEnableBlurBehindWindow não produz blur desde Windows 8](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmenableblurbehindwindow). Implementação local conferida em window-vibrancy 0.8.1: Acrylic usa backdrop transitório em Windows recentes e accent policy nos anteriores compatíveis. Janela mantém tamanho fixo; custo do recorte animado ainda não foi medido.
+
+## AppBar — 0.6.1
+
+[Microsoft: Application Desktop Toolbars](https://learn.microsoft.com/en-us/windows/win32/shell/application-desktop-toolbars) descreve registro, negociação de posição, callbacks e remoção. Implementação usa ABM_NEW, ABM_QUERYPOS, ABM_SETPOS, ABM_WINDOWPOSCHANGED e ABM_REMOVE; sem SPI_SETWORKAREA.

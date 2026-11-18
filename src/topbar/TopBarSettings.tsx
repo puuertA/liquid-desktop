@@ -16,6 +16,6 @@ export function TopBarSettings({config,onError}:{config:TopBarConfig;onError:(va
     <label className="toggle"><input type="checkbox" checked={config.above_apps} disabled={busy} onChange={e=>void change({above_apps:e.target.checked})}/> Acima de aplicativos</label>
     <label className="toggle"><input type="checkbox" checked={config.hide_fullscreen} disabled={busy} onChange={e=>void change({hide_fullscreen:e.target.checked})}/> Ocultar em tela cheia</label></div>
     <div className="bar-module-options">{flags.map(([key,label])=><label className="toggle" key={key}><input type="checkbox" disabled={busy} checked={Boolean(config[key])} onChange={e=>void change({[key]:e.target.checked})}/>{label}</label>)}</div>
-    <p className="mode-help">A ilha ganha espaço livre no centro quando usa o mesmo monitor. Em telas menores, detalhes se ocultam para caber. Clique no ícone à esquerda para abrir o painel. CPU, RAM e rede atualizam a cada 2 segundos. A barra não reserva espaço nas janelas nem substitui a barra de tarefas do Windows.</p>
+    <p className="mode-help">A ilha ganha espaço livre no centro quando usa o mesmo monitor. Em telas menores, detalhes se ocultam para caber. Clique no ícone à esquerda para abrir o painel. CPU, RAM e rede atualizam a cada 2 segundos. A barra reserva uma faixa no topo para os aplicativos maximizados. A ilha compartilha essa faixa; expandi-la não redimensiona os aplicativos. A barra de tarefas do Windows é preservada.</p>
   </section>;
 }

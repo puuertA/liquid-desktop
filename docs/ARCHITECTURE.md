@@ -1,4 +1,12 @@
-# Arquitetura — 0.6.0
+# Arquitetura — 0.6.1
+
+## Reserva da área útil
+
+`workarea.rs` mantém na thread de UI uma janela Win32 invisível por monitor ocupado por uma superfície real e habilitada. Cada janela registra ABM_NEW, negocia ABM_QUERYPOS/ABM_SETPOS e comunica ABM_WINDOWPOSCHANGED. O monitor é identificado por seu retângulo físico; alterações de topologia removem registros antigos. Altura é o máximo das necessidades da barra (52) e ilha (82 floating / 70 notch), não a soma. O hover da ilha não modifica essa altura.
+
+Callbacks ABN_POSCHANGED e TaskbarCreated apenas sinalizam flags atômicas, evitando negociação reentrante dentro de SHAppBarMessage. A manutenção de 1 segundo renegocia quando necessário e refaz registros após reinício do Explorer. O deslocamento aprovado pelo shell é usado ao posicionar barra e ilha, respeitando outras AppBars no topo. Drop registra ABM_REMOVE antes de destruir cada HWND; Exit limpa todas as reservas. Nenhum SPI_SETWORKAREA, registro do Windows ou alteração de resolução é usado.
+
+Falhas são notificadas no painel e tentadas novamente. A reserva continua estável durante fullscreen, enquanto a visibilidade das superfícies segue suas regras existentes. Maximização é responsabilidade dos aplicativos respeitarem a área útil; janelas manuais não são movidas à força.
 
 ## Top Bar
 
@@ -8,7 +16,7 @@ O HWND tem altura de 36 unidades lógicas e margem de 8. `bar_region` une dois r
 
 `topbar_snapshot` lê a configuração, compartilha `State.monitor` com o widget Sistema e usa Core Audio no worker. Polling de 2 segundos tem somente uma chamada em andamento e pausa com document.hidden. `topbar_volume` e `topbar_open_panel` aceitam apenas a janela topbar; `update_topbar` aceita somente main. O volume é enviado ao soltar o slider ou concluir uma tecla, preservando o valor em edição contra atualizações periódicas. Não há capacidades adicionais de shell ou acesso a arquivos.
 
-Frontend usa containers responsivos por segmento. Módulos perdem detalhes em espaço reduzido; não há dados fictícios para preencher valores ausentes. A barra não registra AppBar nem altera área útil de monitores. Control Center e múltiplas instâncias permanecem pendentes.
+Frontend usa containers responsivos por segmento. Módulos perdem detalhes em espaço reduzido; não há dados fictícios para preencher valores ausentes. A reserva AppBar é compartilhada com a ilha desde 0.6.1. Control Center e múltiplas instâncias permanecem pendentes.
 
 A 0.5.2 remove o comando de Acrylic, sua dependência direta e o controle de desfoque. O compositor pintava além de SetWindowRgn no desktop do usuário. O campo antigo native_blur é ignorado por serde e desaparece ao salvar; a janela nova não aplica efeito nativo. Preservadas animação, recorte e iluminação CSS. A correção exige encerrar o processo anterior e iniciar o atualizado.
 

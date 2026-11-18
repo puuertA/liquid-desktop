@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod island;
 mod topbar;
+mod workarea;
 mod media;
 mod monitor;
 mod native;
@@ -592,6 +593,7 @@ fn main() {
                 let task_app = app_handle.clone();
                 if app_handle
                     .run_on_main_thread(move || {
+                        workarea::refresh(&task_app);
                         let handles: Vec<isize> = IDS
                             .iter()
                             .filter_map(|id| task_app.get_webview_window(id))
@@ -652,6 +654,9 @@ fn main() {
             update_drag,
             finish_drag
         ])
-        .run(tauri::generate_context!())
-        .expect("Erro ao iniciar Liquid Desktop");
+        .build(tauri::generate_context!())
+        .expect("Erro ao iniciar Liquid Desktop")
+        .run(|_,event| {
+            if matches!(event,tauri::RunEvent::Exit){workarea::clear();}
+        });
 }

@@ -1,4 +1,12 @@
-# Liquid Desktop 0.6.0
+# Liquid Desktop 0.6.1
+
+## Espaço reservado para aplicativos — 0.6.1
+
+Ativar a Top Bar ou a ilha agora registra uma AppBar do Windows no monitor escolhido. Aplicativos maximizados que respeitam a área útil ficam abaixo da faixa reservada. No mesmo monitor, barra e ilha compartilham uma única reserva, sem somar alturas. Em monitores diferentes, cada um recebe sua própria reserva.
+
+A faixa é estável: 52 unidades lógicas para a barra, 82 para ilha flutuante ou 70 para notch, convertidas conforme o DPI. A ilha expandida abre sobre os aplicativos; expandir/recolher não redimensiona as janelas. Desativar as superfícies ou sair pela bandeja libera o espaço. A negociação respeita outras AppBars e a barra de tarefas; o registro é refeito após a notificação de reinício do Explorer.
+
+Janelas posicionadas manualmente e aplicativos que ignoram a área útil podem continuar sobrepondo a faixa. Tela cheia real continua usando o monitor inteiro e a ocultação das superfícies permanece disponível. Não são alteradas configurações globais de resolução nem a área útil via registro/SPI_SETWORKAREA.
 
 ## Top Bar — primeiro incremento
 
@@ -8,7 +16,7 @@ Escolha monitor, cor (confirme em **Aplicar cor**), opacidade, módulos visívei
 
 Quando a ilha está no mesmo monitor, a barra se divide em dois segmentos e reserva 480 unidades no centro. Esse espaço também é retirado da região nativa da janela, deixando os cliques passarem. Em segmentos estreitos, rede, slider, RAM e outros detalhes se ocultam progressivamente; o painel continua acessível. Monitores com menos de 496 unidades lógicas não comportam a reserva central e os segmentos da barra. Desative a ilha ou use outro monitor nesse caso.
 
-A Top Bar começa desligada ao atualizar. Não altera a área de trabalho útil nem substitui a barra de tarefas do Windows. O material é translúcido, sem Acrylic. Control Center/flyouts, reordenação de módulos, múltiplas barras simultâneas e reserva opcional de espaço por AppBar ficam para próximos incrementos.
+A Top Bar começa desligada ao atualizar a partir de layouts sem barra. Quando ativa, reserva espaço pela AppBar e preserva a barra de tarefas do Windows. O material é translúcido, sem Acrylic. Control Center/flyouts, reordenação de módulos e múltiplas barras simultâneas ficam para próximos incrementos.
 
 ## Correção do vidro — 0.5.2
 
@@ -52,7 +60,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.6.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.6.1_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

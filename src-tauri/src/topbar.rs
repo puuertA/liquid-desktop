@@ -97,13 +97,14 @@ pub fn topbar_open_panel(app:tauri::AppHandle,window:tauri::WebviewWindow)->Resu
 
 // UI-thread only. An actual hole in the HWND leaves the island and desktop clickable.
 pub fn maintain(app:&tauri::AppHandle)->Result<(),String> {
+    crate::workarea::refresh(app);
     let Some(window)=app.get_webview_window("topbar") else {return Ok(())};
     let layout=app.state::<State>().layout.lock().unwrap().clone();
     let config=&layout.topbar;
     let monitors=window.available_monitors().map_err(|e|e.to_string())?;
     let m=monitors.get(effective(config.monitor,monitors.len())).ok_or("Nenhum monitor disponível")?;
     let p=m.position();let size=m.size();let scale=m.scale_factor();
-    let desired=geometry([p.x,p.y],size.width,scale,shared_monitor(&layout,monitors.len()),config.above_apps);
+    let desired=geometry([p.x,p.y+crate::workarea::offset(p.x,p.y)],size.width,scale,shared_monitor(&layout,monitors.len()),config.above_apps);
     let runtime=app.state::<Runtime>();
     let mut previous=runtime.placement.lock().unwrap();
     let hwnd=handle(&window)?;
@@ -157,6 +158,8 @@ pub async fn update_topbar(app:tauri::AppHandle,window:tauri::WebviewWindow,conf
             let mut layout=state.layout.lock().unwrap();layout.topbar=old;persist(&app,&layout)?;
             return Err(error);
         }
+        let copy=app.clone();
+        app.run_on_main_thread(move ||crate::workarea::refresh(&copy)).map_err(|e|e.to_string())?;
         app.emit_to("topbar","topbar-refresh",()).map_err(|e|e.to_string())?;
         let layout=state.layout.lock().unwrap().clone();
         app.emit_to("main","layout",layout).map_err(|e|e.to_string())

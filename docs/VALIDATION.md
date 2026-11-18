@@ -1,5 +1,13 @@
 # Validação
 
+## Versão 0.6.1 — AppBar e área útil
+
+- Passaram 27 testes JavaScript e 13 testes Rust não opt-in. Novos testes cobrem combinação de alturas sem soma, monitores diferentes, fallback de monitor, superfície ausente/desativada e conversão por DPI.
+- Teste nativo de AppBar passou fora do sandbox: registra uma janela auxiliar, confirma via GetMonitorInfo que a área útil do Windows diminui, preserva a barra inferior e confirma restauração exata depois de ABM_REMOVE/Drop. Dentro do sandbox, o Explorer recusou ABM_NEW; a repetição autorizada fora dele passou. A alteração de teste é temporária e protegida por RAII.
+- A verificação ampliada também passou: reserva de 8 → 16 → 8 pixels, manutenção repetida sem acumular espaço e liberação final. Total de 14 testes Rust distintos executados nesta entrega.
+- Build Rust release, TypeScript/Vite e instalador NSIS concluídos: `Liquid Desktop_0.6.1_x64-setup.exe` (2,25 MiB).
+- Pendente: reinício real do Explorer, múltiplos monitores/DPI físicos, fullscreen e comportamento de aplicativos específicos já maximizados. O teste de área útil não comprova que todo aplicativo de terceiros a respeita. A ilha expandida não altera a altura reservada.
+
 ## Versão 0.6.0 — Top Bar, primeiro incremento
 
 - Build Rust release e instalador NSIS concluídos: `Liquid Desktop_0.6.0_x64-setup.exe` (2,23 MiB, 2.334.079 bytes).

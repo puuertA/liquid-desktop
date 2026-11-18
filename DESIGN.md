@@ -2,7 +2,7 @@
 
 ## Top Bar 0.6.0
 
-Barra de 36 unidades com raio 14, margem 8, tipografia 11 px e módulos compactos. Ícone de painel e relógio à esquerda; métricas e áudio à direita. No mesmo monitor da ilha, dois segmentos deixam livre uma faixa central de 480 unidades. Em telas menores, dados menos prioritários cedem espaço aos controles essenciais. Cor/opacidade próprias, fundo translúcido e reflexo superior estático, sem Acrylic ou animação decorativa permanente. O primeiro incremento não substitui o shell nem reserva área útil.
+Barra de 36 unidades com raio 14, margem 8, tipografia 11 px e módulos compactos. Ícone de painel e relógio à esquerda; métricas e áudio à direita. No mesmo monitor da ilha, dois segmentos deixam livre uma faixa central de 480 unidades. Em telas menores, dados menos prioritários cedem espaço aos controles essenciais. Cor/opacidade próprias, fundo translúcido e reflexo superior estático, sem Acrylic ou animação decorativa permanente. A barra não substitui o shell. Desde 0.6.1, reserva área útil junto com a ilha; expandir a ilha não altera a linha de maximização.
 
 ## Dynamic Island 0.5.2
 

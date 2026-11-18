@@ -12,6 +12,6 @@ export function IslandSettings({config,onError}:{config:IslandConfig;onError:(me
     <label>Monitor<select disabled={busy||!monitors.length} value={config.monitor} onChange={e=>void change({monitor:+e.target.value})}>{!monitors.some(m=>m.index===config.monitor)&&<option value={config.monitor}>Monitor salvo indisponível</option>}{monitors.map(m=><option key={m.index} value={m.index}>{m.name}</option>)}</select></label>
     <label className="toggle"><input type="checkbox" disabled={busy} checked={config.above_apps} onChange={e=>void change({above_apps:e.target.checked})}/> Acima de aplicativos</label>
     <label className="toggle"><input type="checkbox" disabled={busy} checked={config.motion} onChange={e=>void change({motion:e.target.checked})}/> Expansão elástica</label></div>
-    <p className="mode-help">Passe o cursor para expandir; Esc recolhe. Oculta automaticamente em tela cheia. Usa a saída de áudio padrão e sessões de mídia oferecidas pelo Windows. Desativar a ilha cancela seu temporizador. O monitor volta ao primeiro disponível se o selecionado for desconectado.</p>
+    <p className="mode-help">Passe o cursor para expandir; Esc recolhe. A ilha reserva espaço no topo para os aplicativos maximizados; a expansão abre sobre eles. Oculta automaticamente em tela cheia. Usa a saída de áudio padrão e sessões de mídia oferecidas pelo Windows. Desativar a ilha cancela seu temporizador. O monitor volta ao primeiro disponível se o selecionado for desconectado.</p>
   </section>;
 }
