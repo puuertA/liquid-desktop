@@ -1,16 +1,27 @@
-# Liquid Desktop 0.6.1
+# Liquid Desktop 0.7.0
+## Vidro líquido e widgets unidos — 0.7.0
+
+No painel, selecione um widget e clique em **Widgets unidos → Usar vidro líquido de…**. O grupo usa esse widget como fonte de cor e material. Ative **Permitir arrastar** em cada widget: ao aproximá-los, as bordas formam uma lente contínua, com reflexos e dispersão RGB. As posições do grupo são salvas separadamente; desativar a união restaura as janelas nas posições individuais anteriores. Notas e configurações são preservadas. Um monitor por grupo nesta versão.
+
+Para refração real, desative **Fundo animado** no widget fonte: o shader distorce a textura do wallpaper estático, mantendo o texto nítido. Com Wallpaper Engine, há união e translucidez, mas não refração do vídeo. Não há captura de outras janelas nem Acrylic. A qualidade controla a resolução da superfície; o consumo de GPU ainda precisa ser medido no desktop.
+
+[Prévia do renderizador numa cena de teste](docs/images/fusion-preview.png). A imagem usa uma textura ilustrativa; a versão instalada usa o wallpaper estático do Windows.
+
+## Control Center — primeiro incremento
+
+Clique no ícone de áudio da Top Bar. Escolha um dispositivo ativo para ajustar seu volume/mute, consulte conectividade e energia reais e abra as configurações correspondentes. A escolha no painel controla aquele dispositivo; para mudar a saída padrão, use **Escolher saída padrão no Windows**. Esc ou perder o foco fecha o flyout. Informações indisponíveis são indicadas explicitamente.
 
 ## Espaço reservado para aplicativos — 0.6.1
 
 Ativar a Top Bar ou a ilha agora registra uma AppBar do Windows no monitor escolhido. Aplicativos maximizados que respeitam a área útil ficam abaixo da faixa reservada. No mesmo monitor, barra e ilha compartilham uma única reserva, sem somar alturas. Em monitores diferentes, cada um recebe sua própria reserva.
 
-A faixa é estável: 52 unidades lógicas para a barra, 82 para ilha flutuante ou 70 para notch, convertidas conforme o DPI. A ilha expandida abre sobre os aplicativos; expandir/recolher não redimensiona as janelas. Desativar as superfícies ou sair pela bandeja libera o espaço. A negociação respeita outras AppBars e a barra de tarefas; o registro é refeito após a notificação de reinício do Explorer.
+Na 0.6.2, a margem abaixo da superfície persistente foi reduzida para 2 unidades lógicas (6 no modo compacto de música). Avisos temporários e expansão podem avançar sobre os aplicativos, sem mover a área útil. A faixa é estável: 46 unidades lógicas para a barra, 70 para ilha flutuante ou 58 para notch, convertidas conforme o DPI. A ilha expandida abre sobre os aplicativos; expandir/recolher não redimensiona as janelas. Desativar as superfícies ou sair pela bandeja libera o espaço. A negociação respeita outras AppBars e a barra de tarefas; o registro é refeito após a notificação de reinício do Explorer.
 
 Janelas posicionadas manualmente e aplicativos que ignoram a área útil podem continuar sobrepondo a faixa. Tela cheia real continua usando o monitor inteiro e a ocultação das superfícies permanece disponível. Não são alteradas configurações globais de resolução nem a área útil via registro/SPI_SETWORKAREA.
 
 ## Top Bar — primeiro incremento
 
-No painel, ative **Top Bar**. A barra mostra hora/data, CPU, RAM, download/upload e volume real do Windows. Clique no ícone à esquerda para abrir o painel; o botão de áudio alterna mute e o slider ajusta o volume da saída padrão. As métricas compartilham o provedor do widget Sistema, com atualização a cada 2 segundos; leituras indisponíveis aparecem como travessão.
+No painel, ative **Top Bar**. A barra mostra hora/data, CPU, RAM, download/upload e volume real do Windows. Clique no ícone à esquerda para abrir o painel; o botão de áudio abre o Control Center e o slider ajusta o volume da saída padrão. As métricas compartilham o provedor do widget Sistema, com atualização a cada 2 segundos; leituras indisponíveis aparecem como travessão.
 
 Escolha monitor, cor (confirme em **Aplicar cor**), opacidade, módulos visíveis, segundos, camada acima dos aplicativos e ocultação em tela cheia. Uma barra pode estar ativa neste incremento, com altura de 36 unidades lógicas e margem de 8. Se o monitor salvo desconectar, usa o primeiro disponível.
 
@@ -34,13 +45,13 @@ Mídia usa GSMTC: título, artista, capa quando fornecida, seleção de sessão,
 
 O temporizador funciona enquanto o app está aberto, usa relógio monotônico e notifica na própria ilha ao terminar. Não é um alarme persistente: desativar a ilha ou encerrar o aplicativo cancela o temporizador. Mídia e timer podem aparecer simultaneamente. Aviso de conclusão tem prioridade sobre aviso de volume por 4,5 segundos.
 
-Liquid/Adaptive usam material translúcido de contraste seguro, sem refração de janelas externas ou adaptação por captura de tela. Não há metaball merging, notificações de terceiros, controles de microfone/dispositivo ou Dock nesta entrega. Esses itens continuam no ROADMAP.
+Liquid/Adaptive usam material translúcido de contraste seguro, sem refração de janelas externas ou adaptação por captura de tela. A ilha ainda não possui fusão entre atividades. Notificações de terceiros, controles de microfone e Dock continuam pendentes. Esses itens continuam no ROADMAP.
 
 O plano [Next Generation](ROADMAP.md) começou pelo motor óptico da 0.4.0. Os cinco widgets, bandeja, temas sincronizados e inicialização opcional continuam disponíveis.
 
 ## Motor óptico e materiais
 
-No painel, selecione um widget e escolha **Clear**, **Thin**, **Regular**, **Frosted**, **Dark** ou **Adaptive**. A prévia é um estúdio com textura ilustrativa, processada pelo mesmo renderer usado no desktop. Cor e material continuam podendo ser sincronizados entre widgets.
+No painel, selecione um widget e escolha **Liquid Prism**, **Clear**, **Thin**, **Regular**, **Frosted**, **Dark** ou **Adaptive**. A prévia é um estúdio com textura ilustrativa, processada pelo mesmo renderer usado no desktop. Cor e material continuam podendo ser sincronizados entre widgets.
 
 Novos ajustes: espessura óptica, largura da borda convexa, dispersão cromática, difusão da textura e qualidade. O centro da lente permanece neutro e a refração se concentra na borda. O material Adaptive mede a luminosidade da textura estática local para aumentar o contraste; com Wallpaper Engine utiliza o contraste manual. Nenhuma imagem de outras janelas ou vídeo do Wallpaper Engine é capturada.
 
@@ -60,7 +71,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.6.1_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.7.0_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

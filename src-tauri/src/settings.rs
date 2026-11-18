@@ -56,7 +56,7 @@ impl Default for Settings {
 impl Settings {
     pub fn validate(&self) -> Result<(), String> {
         if ![
-            "custom", "clear", "thin", "regular", "frosted", "dark", "adaptive",
+            "custom", "clear", "thin", "regular", "frosted", "dark", "adaptive", "liquid",
         ]
         .contains(&self.material.as_str())
             || !["economy", "balanced", "high"].contains(&self.quality.as_str())
@@ -123,6 +123,8 @@ pub struct Layout {
     pub island: crate::island::Config,
     #[serde(default)]
     pub topbar: crate::topbar::Config,
+    #[serde(default)]
+    pub fusion: crate::fusion::Config,
     pub widgets: std::collections::BTreeMap<String, Settings>,
 }
 impl Default for Layout {
@@ -159,6 +161,7 @@ impl Default for Layout {
             sync_theme: false,
             island: crate::island::Config::default(),
             topbar: crate::topbar::Config::default(),
+            fusion: crate::fusion::Config::default(),
             widgets,
         }
     }
@@ -197,6 +200,8 @@ impl Layout {
             layout.island = saved.island;
             saved.topbar.validate()?;
             layout.topbar = saved.topbar;
+            saved.fusion.validate()?;
+            layout.fusion=saved.fusion;
             for (id, settings) in saved.widgets {
                 valid_id(&id)?;
                 settings.validate()?;

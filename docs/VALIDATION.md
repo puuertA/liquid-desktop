@@ -1,5 +1,13 @@
 # Validação
 
+## Versão 0.6.2 — margem compacta
+
+- Build release e instalador NSIS concluídos: `Liquid Desktop_0.6.2_x64-setup.exe` (2,24 MiB).
+- Passaram os 2 testes Rust de cálculo da reserva, com expectativas atualizadas para os novos limites e DPI 150%.
+- Reserva reduzida para 46 unidades lógicas com barra, 70 com ilha flutuante e 58 com notch. São 2 unidades abaixo da maior superfície persistente, ou 6 abaixo da ilha no modo de música. Avisos transitórios podem avançar sobre os aplicativos; hover continua sem alterar a reserva.
+- TypeScript/Vite passaram. A API AppBar e seu ciclo de registro/liberação não mudaram; o teste de alteração/restauração real da 0.6.1 não foi repetido para evitar mexer novamente nas janelas do usuário.
+- Inspeção visual da distância final permanece pendente no desktop instalado.
+
 ## Versão 0.6.1 — AppBar e área útil
 
 - Passaram 27 testes JavaScript e 13 testes Rust não opt-in. Novos testes cobrem combinação de alturas sem soma, monitores diferentes, fallback de monitor, superfície ausente/desativada e conversão por DPI.
@@ -174,3 +182,14 @@ Roteiro adicional: ativar edição, arrastar pelo centro e pelas bordas, soltar 
 - O helper Computer Use continua indisponível (`native pipe`, erro 2). O gesto completo dentro do WebView2 ainda precisa de verificação visual; não foi declarado aprovado.
 - Adicionado teste nativo opt-in `desktop_child_moves_and_returns_to_origin`, que cria exclusivamente um HWND oculto temporário, anexa ao host existente, move, verifica as coordenadas e retorna à origem antes de destruir a janela de teste.
 - **Passou fora do sandbox:** teste nativo de anexação, leitura do cursor, deslocamento físico e retorno à origem (1 teste, 0 falhas). No sandbox o teste não localizava o host do Explorer; a repetição autorizada teve sucesso. Esse resultado comprova as operações Win32 isoladas, não o gesto completo no WebView2.
+
+## 0.7.0 — união óptica e Control Center (18/11/2026)
+
+- Passaram 27 testes JavaScript e 15 testes Rust, incluindo união de superfícies próximas, lacunas entre distantes e migração com preservação de posições/notas. Nove testes de integração permanecem opt-in na execução padrão.
+- Executados separadamente: enumeração de endpoints reais de áudio/energia e máscara Win32 em HWND oculto com pontos dentro, fora e nas lacunas; ambos passaram.
+- TypeScript e Vite de produção passaram. O shader WebGL2 real foi renderizado em Edge headless com SwiftShader, usando textura ilustrativa: linhas refratadas, separação RGB, união a 16 px e texto fora do filtro. Evidência: `images/fusion-preview.png`. A primeira tentativa no sandbox falhou na inicialização GPU; a execução autorizada fora dele produziu a imagem.
+- Não comprovados por essa cena: desempenho na GPU do usuário, arraste interativo no WebView2, DPI misto, fullscreen, recuperação do Explorer ou instalação/desinstalação. Não há alegação de 60 FPS nem equivalência visual exata a outro sistema.
+- Com Wallpaper Engine, o modo unido usa transparência e reflexos. Refração RGB de vídeo ao vivo não está implementada; refração real exige wallpaper estático.
+
+Verificação manual desta versão: ativar Widgets unidos; aproximar e afastar dois widgets com edição ligada; confirmar união e clique no desktop nas lacunas; cancelar arraste com Esc; reiniciar e conferir posições; desativar união e conferir posições individuais/notas. Testar Material → Fundo animado ligado/desligado, cor e dispersão. Abrir Control Center pela Top Bar, escolher endpoint, ajustar volume/mute, retirar o dispositivo, fechar por Esc/perda de foco e verificar os atalhos às configurações.
+Build Rust release e instalador NSIS x64 0.7.0 concluídos com sucesso. Tamanho: 2431688 bytes. SHA-256: B4D0C53FB3BD438F69CCF633428FEAAC467127D7161A7A0D96F6A4F68F541CD2.

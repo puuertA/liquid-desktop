@@ -2,6 +2,8 @@
 mod island;
 mod topbar;
 mod workarea;
+mod fusion;
+mod control_center;
 mod media;
 mod monitor;
 mod native;
@@ -103,6 +105,7 @@ fn persist(app: &tauri::AppHandle, layout: &Layout) -> Result<(), String> {
     std::fs::rename(&temp, &target).map_err(|e| e.to_string())
 }
 fn publish(app: &tauri::AppHandle, id: &str, layout: &Layout) -> Result<(), String> {
+    let _=app.emit_to("fusion","fusion-refresh",());
     app.emit_to(id, "settings", &layout.widgets[id])
         .map_err(|e| e.to_string())?;
     app.emit_to("main", "layout", layout)
@@ -129,7 +132,7 @@ async fn system_snapshot(
     app: tauri::AppHandle,
     window: tauri::WebviewWindow,
 ) -> Result<monitor::Snapshot, String> {
-    if window.label() != "system" {
+    if !["system","fusion"].contains(&window.label()) {
         return Err("Provedor reservado ao monitor do sistema".into());
     }
     tauri::async_runtime::spawn_blocking(move || {
@@ -361,7 +364,7 @@ fn save_note(
     window: tauri::WebviewWindow,
     text: String,
 ) -> Result<(), String> {
-    if window.label() != "notes" {
+    if !["notes","fusion"].contains(&window.label()) {
         return Err("Janela de notas inválida".into());
     }
     if text.len() > 32_000 {
@@ -555,6 +558,8 @@ fn main() {
             });
             app.manage(island::Runtime::default());
             app.manage(topbar::Runtime::default());
+            app.manage(fusion::Runtime::default());
+            app.manage(control_center::Runtime::default());
             let restore_app = app.handle().clone();
             std::thread::spawn(move || {
                 {
@@ -586,6 +591,8 @@ fn main() {
                             restore_app.emit_to("main", "widget-error", format!("{id}: {error}"));
                     }
                 }
+                let runtime=restore_app.state::<fusion::Runtime>();let _lock=runtime.lifecycle.lock().unwrap();
+                if let Err(e)=fusion::create(&restore_app){let _=restore_app.emit_to("main","widget-error",e);}
             });
             let app_handle = app.handle().clone();
             std::thread::spawn(move || loop {
@@ -602,6 +609,7 @@ fn main() {
                         let _ = native::maintain_desktop_layers(&handles);
                         island::maintain(&task_app);
                         let _=topbar::maintain(&task_app);
+                        let _=fusion::maintain(&task_app);
                     })
                     .is_err()
                 {
@@ -611,6 +619,7 @@ fn main() {
             Ok(())
         })
         .on_window_event(|w, event| {
+            if w.label()=="control-center"&&matches!(event,tauri::WindowEvent::Focused(false)){let _=w.hide();}
             if w.label() == "main" {
                 match event {
                     tauri::WindowEvent::CloseRequested { api, .. } => {
@@ -626,6 +635,14 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             island::get_island_config,
+            control_center::toggle_center,
+            control_center::center_snapshot,
+            control_center::center_volume,
+            control_center::center_hide,
+            control_center::center_settings,
+            fusion::fusion_snapshot,
+            fusion::fusion_positions,
+            fusion::update_fusion,
             topbar::topbar_snapshot,
             topbar::topbar_volume,
             topbar::topbar_open_panel,

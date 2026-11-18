@@ -180,6 +180,20 @@ pub fn bar_region(hwnd:isize,width:i32,height:i32,gap:i32,radius:i32)->Result<()
         Ok(())
     }
 }
+pub fn scanline_region(hwnd:isize,rows:&[[i32;4]])->Result<(),String>{
+    #[link(name="gdi32")]
+    unsafe extern "system"{fn ExtCreateRegion(transform:*const c_void,count:u32,data:*const c_void)->Hwnd;}
+    // RGNDATAHEADER followed by ordered, non-overlapping RECT scanlines.
+    let mut words=Vec::<i32>::with_capacity(8+rows.len()*4);
+    let bounds=[rows.iter().map(|r|r[0]).min().unwrap_or(0),rows.iter().map(|r|r[1]).min().unwrap_or(0),rows.iter().map(|r|r[2]).max().unwrap_or(0),rows.iter().map(|r|r[3]).max().unwrap_or(0)];
+    words.extend([32,1,rows.len() as i32,(rows.len()*16)as i32]);words.extend(bounds);
+    for row in rows{words.extend(row)}
+    unsafe{
+        let region=if rows.is_empty(){CreateRectRgn(0,0,0,0)}else{ExtCreateRegion(std::ptr::null(),(words.len()*4)as u32,words.as_ptr().cast())};
+        if region.is_null(){return Err("Falha ao criar contorno líquido".into())}
+        if SetWindowRgn(hwnd as Hwnd,region,1)==0{DeleteObject(region);return Err("Falha ao aplicar contorno líquido".into())}
+    }Ok(())
+}
 pub fn foreground_fullscreen(monitor: [i32; 4]) -> bool {
     unsafe {
         let h = GetForegroundWindow();
@@ -448,6 +462,14 @@ mod tests {
             }
         }
     }
+    #[test]
+    #[ignore = "Creates a hidden HWND and verifies the scanline mask leaves empty gaps clickable"]
+    fn scanline_mask_preserves_empty_gaps(){unsafe{
+        let null=std::ptr::null_mut();let h=CreateWindowExW(0x80,wide("STATIC").as_ptr(),wide("Liquid mask test").as_ptr(),0x80000000,0,0,120,80,null,null,null,null);assert!(!h.is_null());let _window=TestWindow(h);
+        scanline_region(h as isize,&[[10,10,50,12],[70,10,100,12],[10,12,100,14]]).unwrap();
+        let region=CreateRectRgn(0,0,0,0);assert_ne!(GetWindowRgn(h,region),0);
+        assert_ne!(PtInRegion(region,20,11),0);assert_ne!(PtInRegion(region,80,11),0);assert_eq!(PtInRegion(region,60,11),0);assert_ne!(PtInRegion(region,60,13),0);assert_eq!(PtInRegion(region,0,0),0);DeleteObject(region);
+    }}
     #[test]
     #[ignore = "Creates a hidden Top Bar HWND and verifies the real click-through gap"]
     fn topbar_gap_is_absent_from_native_region_and_can_be_closed() {

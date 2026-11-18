@@ -1,8 +1,8 @@
-# Arquitetura — 0.6.1
+# Arquitetura — 0.6.2
 
 ## Reserva da área útil
 
-`workarea.rs` mantém na thread de UI uma janela Win32 invisível por monitor ocupado por uma superfície real e habilitada. Cada janela registra ABM_NEW, negocia ABM_QUERYPOS/ABM_SETPOS e comunica ABM_WINDOWPOSCHANGED. O monitor é identificado por seu retângulo físico; alterações de topologia removem registros antigos. Altura é o máximo das necessidades da barra (52) e ilha (82 floating / 70 notch), não a soma. O hover da ilha não modifica essa altura.
+`workarea.rs` mantém na thread de UI uma janela Win32 invisível por monitor ocupado por uma superfície real e habilitada. Cada janela registra ABM_NEW, negocia ABM_QUERYPOS/ABM_SETPOS e comunica ABM_WINDOWPOSCHANGED. O monitor é identificado por seu retângulo físico; alterações de topologia removem registros antigos. Altura é o máximo das necessidades da barra (46) e ilha (70 floating / 58 notch), não a soma. O hover da ilha não modifica essa altura.
 
 Callbacks ABN_POSCHANGED e TaskbarCreated apenas sinalizam flags atômicas, evitando negociação reentrante dentro de SHAppBarMessage. A manutenção de 1 segundo renegocia quando necessário e refaz registros após reinício do Explorer. O deslocamento aprovado pelo shell é usado ao posicionar barra e ilha, respeitando outras AppBars no topo. Drop registra ABM_REMOVE antes de destruir cada HWND; Exit limpa todas as reservas. Nenhum SPI_SETWORKAREA, registro do Windows ou alteração de resolução é usado.
 
@@ -79,3 +79,11 @@ Persistência cria backup inicial, grava arquivo temporário e renomeia. Acesso 
 ## Próximos passos
 
 Validar visualmente widgets e Dynamic Island em múltiplos DPI, medir custo das WebViews, ampliar cache de wallpaper compartilhado, adicionar múltiplas instâncias e novos provedores reais. Ampliar a validação dos comandos de mídia nos players. Clima, temperatura/GPU, galeria, Control Center e Dock permanecem etapas futuras.
+
+## 0.7.0 — superfície compartilhada e Control Center
+
+`fusion.rs` mantém configuração opt-in, monitor, widget fonte e posições separadas das janelas individuais. A janela compartilhada oculta as originais sem descartar seus dados. Desativar restaura as originais; falhas de criação restauram a configuração. WebGL2 usa distância assinada de retângulos arredondados e união suave de 48 unidades; o recorte Win32 usa a mesma função, com scanlines de dois pixels físicos. Durante arraste capturado, a região é temporariamente ampliada; soltura, cancelamento ou manutenção após inatividade restauram o contorno. Lacunas externas ficam disponíveis ao desktop em repouso.
+
+`FusionGlass` desenha por alterações, sem loop ocioso. O wallpaper estático é amostrado com deslocamentos independentes RGB e perfil óptico de borda; HTML de conteúdo fica fora do shader. O modo animado usa translucidez e reflexos, sem capturar/refletir vídeo externo. A textura tem limite de resolução; qualidade controla a resolução do canvas. Perda do contexto WebGL é exibida como erro recuperável desativando/reativando a união.
+
+`control_center.rs` enumera endpoints ativos via Core Audio e controla somente o endpoint validado. A seleção não altera o roteamento padrão. NetworkInformation e GetSystemPowerStatus fornecem dados reais; ShellExecute abre apenas três URIs fixas de configurações. Comandos são restritos aos labels autorizados. A janela tem região arredondada, fecha ao perder foco e não altera a reserva AppBar existente.

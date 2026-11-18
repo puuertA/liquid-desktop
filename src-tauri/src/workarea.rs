@@ -87,9 +87,11 @@ thread_local! {
 }
 fn effective(index:usize,count:usize)->usize{if index<count{index}else{0}}
 fn height(layout:&crate::Layout,index:usize,count:usize,bar_exists:bool,island_exists:bool)->f64 {
-    let bar=if layout.topbar.enabled&&bar_exists&&effective(layout.topbar.monitor,count)==index {52.0_f64}else{0.0};
+    // Two logical pixels below the persistent surface (bar 36+8, island up to 56).
+    // Transient notices and expansion overlay apps rather than moving the work area.
+    let bar=if layout.topbar.enabled&&bar_exists&&effective(layout.topbar.monitor,count)==index {46.0_f64}else{0.0};
     let island=if layout.island.enabled&&island_exists&&effective(layout.island.monitor,count)==index {
-        if layout.island.form=="notch"{70.0}else{82.0}
+        if layout.island.form=="notch"{58.0}else{70.0}
     }else{0.0};
     bar.max(island)
 }
@@ -175,18 +177,18 @@ mod tests {
     fn one_reservation_per_monitor_never_adds_bar_and_island_heights(){
         let mut layout=crate::Layout::default();
         assert_eq!(height(&layout,0,2,true,true),0.0);
-        layout.topbar.enabled=true;assert_eq!(height(&layout,0,2,true,false),52.0);
-        layout.island.enabled=true;assert_eq!(height(&layout,0,2,true,true),82.0);
-        layout.island.form="notch".into();assert_eq!(height(&layout,0,2,true,true),70.0);
-        layout.island.monitor=1;assert_eq!(height(&layout,0,2,true,true),52.0);assert_eq!(height(&layout,1,2,true,true),70.0);
-        assert_eq!(height(&layout,0,1,true,true),70.0);
+        layout.topbar.enabled=true;assert_eq!(height(&layout,0,2,true,false),46.0);
+        layout.island.enabled=true;assert_eq!(height(&layout,0,2,true,true),70.0);
+        layout.island.form="notch".into();assert_eq!(height(&layout,0,2,true,true),58.0);
+        layout.island.monitor=1;assert_eq!(height(&layout,0,2,true,true),46.0);assert_eq!(height(&layout,1,2,true,true),58.0);
+        assert_eq!(height(&layout,0,1,true,true),58.0);
         layout.topbar.enabled=false;layout.island.enabled=false;assert_eq!(height(&layout,0,1,true,true),0.0);
     }
     #[test]
     fn a_failed_or_closed_surface_does_not_reserve_space(){
         let mut layout=crate::Layout::default();layout.topbar.enabled=true;layout.island.enabled=true;
         assert_eq!(height(&layout,0,1,false,false),0.0);
-        assert_eq!(height(&layout,0,1,true,false),52.0);
-        assert_eq!((height(&layout,0,1,false,true)*1.5).round() as i32,123);
+        assert_eq!(height(&layout,0,1,true,false),46.0);
+        assert_eq!((height(&layout,0,1,false,true)*1.5).round() as i32,105);
     }
 }

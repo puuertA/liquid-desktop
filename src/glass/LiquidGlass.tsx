@@ -78,11 +78,11 @@ export function LiquidGlass({settings:s,wallpaper,children,onError,previewRect}:
       <feGaussianBlur in="SourceGraphic" stdDeviation={s.frost} edgeMode="duplicate" result="texture"/>
       <feImage href={map} result="normal" preserveAspectRatio="none" width="100%" height="100%"/>
       {dispersion>0?<>
-        <feDisplacementMap in="texture" in2="normal" scale={scale*(1-dispersion*.1)} xChannelSelector="R" yChannelSelector="G" result="redWarp"/>
+        <feDisplacementMap in="texture" in2="normal" scale={scale*(1-dispersion*.7)} xChannelSelector="R" yChannelSelector="G" result="redWarp"/>
         <feColorMatrix in="redWarp" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="red"/>
         <feDisplacementMap in="texture" in2="normal" scale={scale} xChannelSelector="R" yChannelSelector="G" result="greenWarp"/>
         <feColorMatrix in="greenWarp" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="green"/>
-        <feDisplacementMap in="texture" in2="normal" scale={scale*(1+dispersion*.14)} xChannelSelector="R" yChannelSelector="G" result="blueWarp"/>
+        <feDisplacementMap in="texture" in2="normal" scale={scale*(1+dispersion*.7)} xChannelSelector="R" yChannelSelector="G" result="blueWarp"/>
         <feColorMatrix in="blueWarp" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0" result="blue"/>
         <feBlend in="red" in2="green" mode="screen" result="rg"/><feBlend in="rg" in2="blue" mode="screen"/>
       </>:<feDisplacementMap in="texture" in2="normal" scale={scale} xChannelSelector="R" yChannelSelector="G"/>}

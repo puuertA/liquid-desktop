@@ -1,0 +1,2 @@
+[data-surface=fusion],[data-surface=fusion] body,[data-surface=fusion] #root{background:transparent;width:100%;height:100%;overflow:hidden}
+.fusion-host{width:100%;height:100%;position:relative;color:#fff}.fusion-glass{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}.fusion-widget{position:absolute;border-radius:32px;overflow:hidden;text-shadow:0 1px 3px #000b,0 0 10px #0004;background:transparent}.fusion-widget:focus-visible{outline:1px solid #fff8;outline-offset:-3px}.fusion-widget .edit-note{font-size:10px}.fusion-settings .mode-help{max-width:850px}
