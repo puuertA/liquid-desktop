@@ -1,5 +1,9 @@
 # Liquid Desktop — linguagem visual
 
+## Top Bar 0.6.0
+
+Barra de 36 unidades com raio 14, margem 8, tipografia 11 px e módulos compactos. Ícone de painel e relógio à esquerda; métricas e áudio à direita. No mesmo monitor da ilha, dois segmentos deixam livre uma faixa central de 480 unidades. Em telas menores, dados menos prioritários cedem espaço aos controles essenciais. Cor/opacidade próprias, fundo translúcido e reflexo superior estático, sem Acrylic ou animação decorativa permanente. O primeiro incremento não substitui o shell nem reserva área útil.
+
 ## Dynamic Island 0.5.2
 
 Acrylic foi retirado na 0.5.2 após evidência visual de vazamento para o retângulo da janela. Permanecem transparência, borda iluminada, reflexos suaves e animações contínuas. Não há blur ou refração ao vivo na ilha.

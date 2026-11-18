@@ -163,6 +163,23 @@ pub fn surface_region(
         Ok(())
     }
 }
+/// The central gap is absent from the HWND region, not merely transparent CSS.
+pub fn bar_region(hwnd:isize,width:i32,height:i32,gap:i32,radius:i32)->Result<(),String> {
+    unsafe {
+        let region=CreateRectRgn(0,0,0,0);
+        if region.is_null(){return Err("Falha ao criar região da barra".into())}
+        let spans=if gap>0 {vec![(0,(width-gap).max(0)/2),((width+gap).min(width*2)/2,width)]} else {vec![(0,width)]};
+        for (left,right) in spans {
+            if right<=left{continue}
+            let part=CreateRoundRectRgn(left,0,right+1,height+1,2*radius,2*radius);
+            if part.is_null(){DeleteObject(region);return Err("Falha ao criar segmento da barra".into())}
+            let result=CombineRgn(region,region,part,2);DeleteObject(part);
+            if result==0{DeleteObject(region);return Err("Falha ao unir segmentos da barra".into())}
+        }
+        if SetWindowRgn(hwnd as Hwnd,region,1)==0{DeleteObject(region);return Err("Falha ao aplicar região da barra".into())}
+        Ok(())
+    }
+}
 pub fn foreground_fullscreen(monitor: [i32; 4]) -> bool {
     unsafe {
         let h = GetForegroundWindow();
@@ -429,6 +446,30 @@ mod tests {
             unsafe {
                 DestroyWindow(self.0);
             }
+        }
+    }
+    #[test]
+    #[ignore = "Creates a hidden Top Bar HWND and verifies the real click-through gap"]
+    fn topbar_gap_is_absent_from_native_region_and_can_be_closed() {
+        unsafe {
+            let null=std::ptr::null_mut();
+            let h=CreateWindowExW(0x80,wide("STATIC").as_ptr(),wide("Top Bar region test").as_ptr(),0x80000000,0,0,1200,54,null,null,null,null);
+            assert!(!h.is_null());let _window=TestWindow(h);
+            configure_desktop_window(h as isize).unwrap();
+            let region=CreateRectRgn(0,0,0,0);assert!(!region.is_null());
+            // 150% DPI: 480 logical units of reserved island space = 720 physical pixels.
+            bar_region(h as isize,1200,54,720,21).unwrap();
+            assert_ne!(GetWindowRgn(h,region),0);
+            assert_ne!(PtInRegion(region,100,27),0);
+            assert_ne!(PtInRegion(region,1100,27),0);
+            for x in [241,400,600,800,959] {assert_eq!(PtInRegion(region,x,27),0);}
+            assert_eq!(PtInRegion(region,0,0),0);
+            bar_region(h as isize,1200,54,0,21).unwrap();
+            assert_ne!(GetWindowRgn(h,region),0);assert_ne!(PtInRegion(region,600,27),0);
+            // A very narrow screen never produces an inverted GDI region.
+            bar_region(h as isize,300,36,480,14).unwrap();
+            assert_ne!(GetWindowRgn(h,region),0);assert_eq!(PtInRegion(region,150,18),0);
+            DeleteObject(region);
         }
     }
     #[test]

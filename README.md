@@ -1,4 +1,14 @@
-# Liquid Desktop 0.5.2
+# Liquid Desktop 0.6.0
+
+## Top Bar — primeiro incremento
+
+No painel, ative **Top Bar**. A barra mostra hora/data, CPU, RAM, download/upload e volume real do Windows. Clique no ícone à esquerda para abrir o painel; o botão de áudio alterna mute e o slider ajusta o volume da saída padrão. As métricas compartilham o provedor do widget Sistema, com atualização a cada 2 segundos; leituras indisponíveis aparecem como travessão.
+
+Escolha monitor, cor (confirme em **Aplicar cor**), opacidade, módulos visíveis, segundos, camada acima dos aplicativos e ocultação em tela cheia. Uma barra pode estar ativa neste incremento, com altura de 36 unidades lógicas e margem de 8. Se o monitor salvo desconectar, usa o primeiro disponível.
+
+Quando a ilha está no mesmo monitor, a barra se divide em dois segmentos e reserva 480 unidades no centro. Esse espaço também é retirado da região nativa da janela, deixando os cliques passarem. Em segmentos estreitos, rede, slider, RAM e outros detalhes se ocultam progressivamente; o painel continua acessível. Monitores com menos de 496 unidades lógicas não comportam a reserva central e os segmentos da barra. Desative a ilha ou use outro monitor nesse caso.
+
+A Top Bar começa desligada ao atualizar. Não altera a área de trabalho útil nem substitui a barra de tarefas do Windows. O material é translúcido, sem Acrylic. Control Center/flyouts, reordenação de módulos, múltiplas barras simultâneas e reserva opcional de espaço por AppBar ficam para próximos incrementos.
 
 ## Correção do vidro — 0.5.2
 
@@ -16,7 +26,7 @@ Mídia usa GSMTC: título, artista, capa quando fornecida, seleção de sessão,
 
 O temporizador funciona enquanto o app está aberto, usa relógio monotônico e notifica na própria ilha ao terminar. Não é um alarme persistente: desativar a ilha ou encerrar o aplicativo cancela o temporizador. Mídia e timer podem aparecer simultaneamente. Aviso de conclusão tem prioridade sobre aviso de volume por 4,5 segundos.
 
-Liquid/Adaptive usam material translúcido de contraste seguro, sem refração de janelas externas ou adaptação por captura de tela. Não há metaball merging, notificações de terceiros, controles de microfone/dispositivo, Top Bar ou Dock nesta entrega. Esses itens continuam no ROADMAP.
+Liquid/Adaptive usam material translúcido de contraste seguro, sem refração de janelas externas ou adaptação por captura de tela. Não há metaball merging, notificações de terceiros, controles de microfone/dispositivo ou Dock nesta entrega. Esses itens continuam no ROADMAP.
 
 O plano [Next Generation](ROADMAP.md) começou pelo motor óptico da 0.4.0. Os cinco widgets, bandeja, temas sincronizados e inicialização opcional continuam disponíveis.
 
@@ -42,7 +52,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.5.2_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.6.0_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

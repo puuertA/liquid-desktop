@@ -1,1 +1,1 @@
-{"identifier":"desktop","windows":["main","clock","analog","calendar","notes","system","island"],"permissions":["core:default"]}
+{"identifier":"desktop","windows":["main","clock","analog","calendar","notes","system","island","topbar"],"permissions":["core:default"]}

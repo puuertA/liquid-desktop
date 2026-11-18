@@ -1,4 +1,14 @@
-# Arquitetura — 0.5.2
+# Arquitetura — 0.6.0
+
+## Top Bar
+
+`topbar.rs` implementa uma TOOLWINDOW transparente e sem moldura independente dos widgets. Configuração serde com defaults preserva layouts schema 2, iniciando desativada. Um mutex serializa criação/restauração/alteração; falhas restauram a configuração anterior. A manutenção em UI usa coordenadas físicas do monitor, cache de geometria e a mesma detecção de fullscreen da ilha.
+
+O HWND tem altura de 36 unidades lógicas e margem de 8. `bar_region` une dois retângulos arredondados quando ilha/barra compartilham o monitor efetivo, retirando 480 unidades centrais da região de hit testing. Sem ilha, a região volta a uma cápsula única. A forma é atualizada quando configuração, topologia ou coordenadas mudam, não em cada amostra de métricas. Nenhum Acrylic ou blur de compositor é aplicado.
+
+`topbar_snapshot` lê a configuração, compartilha `State.monitor` com o widget Sistema e usa Core Audio no worker. Polling de 2 segundos tem somente uma chamada em andamento e pausa com document.hidden. `topbar_volume` e `topbar_open_panel` aceitam apenas a janela topbar; `update_topbar` aceita somente main. O volume é enviado ao soltar o slider ou concluir uma tecla, preservando o valor em edição contra atualizações periódicas. Não há capacidades adicionais de shell ou acesso a arquivos.
+
+Frontend usa containers responsivos por segmento. Módulos perdem detalhes em espaço reduzido; não há dados fictícios para preencher valores ausentes. A barra não registra AppBar nem altera área útil de monitores. Control Center e múltiplas instâncias permanecem pendentes.
 
 A 0.5.2 remove o comando de Acrylic, sua dependência direta e o controle de desfoque. O compositor pintava além de SetWindowRgn no desktop do usuário. O campo antigo native_blur é ignorado por serde e desaparece ao salvar; a janela nova não aplica efeito nativo. Preservadas animação, recorte e iluminação CSS. A correção exige encerrar o processo anterior e iniciar o atualizado.
 
@@ -22,7 +32,7 @@ Temporizador é um Instant no runtime Rust, não depende do intervalo do fronten
 
 Settings ganhou campos aditivos com defaults: material custom, espessura 18, borda 26, dispersão 0,1, difusão 0,35, qualidade balanced e movimento ligado. Schema 2 permanece compatível; valores existentes não são resetados. Sincronização inclui os novos campos e mantém conteúdo/geometria individuais. Backend valida enums, finitude e limites.
 
-O comportamento nativo DesktopWidget não foi substituído. FloatingIsland tem uma janela independente desde 0.5.0; DesktopBar, Dock e Flyout continuam previstos no ROADMAP. A lista de IDs de widgets continua restrita aos cinco widgets.
+O comportamento nativo DesktopWidget não foi substituído. FloatingIsland tem uma janela independente desde 0.5.0; Top Bar desde 0.6.0. Dock e Flyout continuam previstos no ROADMAP. A lista de IDs de widgets continua restrita aos cinco widgets.
 
 ## Aplicativo em segundo plano
 
@@ -60,4 +70,4 @@ Persistência cria backup inicial, grava arquivo temporário e renomeia. Acesso 
 
 ## Próximos passos
 
-Validar visualmente widgets e Dynamic Island em múltiplos DPI, medir custo das WebViews, ampliar cache de wallpaper compartilhado, adicionar múltiplas instâncias e novos provedores reais. Ampliar a validação dos comandos de mídia nos players. Clima, temperatura/GPU, galeria, Top Bar e Dock permanecem etapas futuras.
+Validar visualmente widgets e Dynamic Island em múltiplos DPI, medir custo das WebViews, ampliar cache de wallpaper compartilhado, adicionar múltiplas instâncias e novos provedores reais. Ampliar a validação dos comandos de mídia nos players. Clima, temperatura/GPU, galeria, Control Center e Dock permanecem etapas futuras.

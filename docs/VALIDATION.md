@@ -1,5 +1,14 @@
 # Validação
 
+## Versão 0.6.0 — Top Bar, primeiro incremento
+
+- Build Rust release e instalador NSIS concluídos: `Liquid Desktop_0.6.0_x64-setup.exe` (2,23 MiB, 2.334.079 bytes).
+- Passaram 27 testes JavaScript e 11 testes Rust não opt-in. Cobertura nova: contadores indisponíveis versus zero real, unidades de rede/RAM, tint/alpha, migração de layout, validação de configuração, monitor desconectado, origem negativa e DPI 150%.
+- Passou também o teste nativo opt-in da Top Bar: um HWND oculto confirma por GetWindowRgn/PtInRegion que o vão central fica fora da região, os dois segmentos recebem cliques, os cantos são arredondados e o centro volta a pertencer à janela quando a reserva é removida. Inclui 150% de DPI e largura menor que o vão. Total nesta versão: 12 testes Rust executados; os 5 opt-in antigos não foram repetidos.
+- TypeScript/Vite passaram. Os provedores de sistema e áudio foram reaproveitados; não houve alteração intencional de reprodução ou volume durante os testes.
+- Pendente: inspeção visual WebView2 da barra e painel, comandos interativos de volume/mute, transparência sobre fundos variados, monitores/DPI reais, fullscreen/jogos, Win+D e benchmark. Testes de região nativa não equivalem à inspeção visual do compositor.
+- Escopo entregue: uma barra, módulos fixos com visibilidade configurável, sem Acrylic, sem AppBar ou Control Center. Top Bar começa desativada; layouts anteriores preservam widgets e ilha.
+
 ## Versão 0.5.2 — regressão de Acrylic
 
 - Build release e instalador NSIS concluídos: `Liquid Desktop_0.5.2_x64-setup.exe`.

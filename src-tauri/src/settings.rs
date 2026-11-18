@@ -121,6 +121,8 @@ pub struct Layout {
     pub sync_theme: bool,
     #[serde(default)]
     pub island: crate::island::Config,
+    #[serde(default)]
+    pub topbar: crate::topbar::Config,
     pub widgets: std::collections::BTreeMap<String, Settings>,
 }
 impl Default for Layout {
@@ -156,6 +158,7 @@ impl Default for Layout {
             version: 2,
             sync_theme: false,
             island: crate::island::Config::default(),
+            topbar: crate::topbar::Config::default(),
             widgets,
         }
     }
@@ -192,6 +195,8 @@ impl Layout {
             layout.sync_theme = saved.sync_theme;
             saved.island.validate()?;
             layout.island = saved.island;
+            saved.topbar.validate()?;
+            layout.topbar = saved.topbar;
             for (id, settings) in saved.widgets {
                 valid_id(&id)?;
                 settings.validate()?;

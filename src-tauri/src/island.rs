@@ -410,6 +410,9 @@ pub async fn update_island(
         }
         app.emit_to("island", "island-config", &config)
             .map_err(|e| e.to_string())?;
+        let copy=app.clone();
+        app.run_on_main_thread(move ||{let _=crate::topbar::maintain(&copy);}).map_err(|e|e.to_string())?;
+        app.emit_to("topbar", "topbar-refresh", ()).map_err(|e|e.to_string())?;
         let layout = state.layout.lock().unwrap().clone();
         app.emit_to("main", "layout", &layout)
             .map_err(|e| e.to_string())

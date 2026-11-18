@@ -20,4 +20,4 @@ Pressão altera escala X para 1,004 e Y para 0,99. Soltar, sair, cancelar pontei
 
 Expansão deve começar horizontalmente e continuar em altura, mantendo um único contorno. Alterações de raio e região nativa precisam corresponder à forma visível. Ao interromper hover, nova trajetória parte da geometria e velocidade atuais. Conteúdo entra após espaço suficiente; a capa permanece o mesmo elemento entre compact e expanded. Movimento reduzido usa mudança direta de geometria e mantém todas as ações.
 
-Fusão entre cápsulas deve existir apenas para atividades reais concorrentes. Não aplicar blur/goo ao texto ou aos ícones; limitar a operação à camada de material e à região de hit testing. A fusão ainda não está implementada. A primeira janela Dynamic Island foi adicionada na 0.5.0; Top Bar segue pendente.
+Fusão entre cápsulas deve existir apenas para atividades reais concorrentes. Não aplicar blur/goo ao texto ou aos ícones; limitar a operação à camada de material e à região de hit testing. A fusão ainda não está implementada. A primeira janela Dynamic Island foi adicionada na 0.5.0; a Top Bar 0.6.0 mantém geometria estável e não executa animação decorativa em repouso.

@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod island;
+mod topbar;
 mod media;
 mod monitor;
 mod native;
@@ -552,6 +553,7 @@ fn main() {
                 load_error,
             });
             app.manage(island::Runtime::default());
+            app.manage(topbar::Runtime::default());
             let restore_app = app.handle().clone();
             std::thread::spawn(move || {
                 {
@@ -568,6 +570,13 @@ fn main() {
                         if let Err(error) = island::create(&restore_app) {
                             let _ = restore_app.emit_to("main", "widget-error", error);
                         }
+                    }
+                }
+                {
+                    let runtime=restore_app.state::<topbar::Runtime>();
+                    let _lifecycle=runtime.lifecycle.lock().unwrap();
+                    if let Err(error)=topbar::create(&restore_app) {
+                        let _=restore_app.emit_to("main","widget-error",error);
                     }
                 }
                 for id in restore {
@@ -590,6 +599,7 @@ fn main() {
                             .collect();
                         let _ = native::maintain_desktop_layers(&handles);
                         island::maintain(&task_app);
+                        let _=topbar::maintain(&task_app);
                     })
                     .is_err()
                 {
@@ -614,6 +624,10 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             island::get_island_config,
+            topbar::topbar_snapshot,
+            topbar::topbar_volume,
+            topbar::topbar_open_panel,
+            topbar::update_topbar,
             island::island_monitors,
             island::update_island,
             island::island_snapshot,
