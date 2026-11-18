@@ -119,6 +119,8 @@ pub struct Layout {
     pub version: u32,
     #[serde(default)]
     pub sync_theme: bool,
+    #[serde(default)]
+    pub island: crate::island::Config,
     pub widgets: std::collections::BTreeMap<String, Settings>,
 }
 impl Default for Layout {
@@ -153,6 +155,7 @@ impl Default for Layout {
         Self {
             version: 2,
             sync_theme: false,
+            island: crate::island::Config::default(),
             widgets,
         }
     }
@@ -187,6 +190,8 @@ impl Layout {
                 return Err("Versão de layout não suportada".into());
             }
             layout.sync_theme = saved.sync_theme;
+            saved.island.validate()?;
+            layout.island = saved.island;
             for (id, settings) in saved.widgets {
                 valid_id(&id)?;
                 settings.validate()?;

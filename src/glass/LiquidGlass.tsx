@@ -8,10 +8,12 @@ import {adaptiveShade,relativeLuminance} from './optics.mjs';
 import {lensMap} from './maps';
 import {pressSurface,stopSurface} from './motion';
 import './glass.css';
+import {useGlassLight} from './useGlassLight';
 
 type Props={settings:Settings;wallpaper:Wallpaper|null;children:ReactNode;onError:(s:string)=>void;previewRect?:()=>[number,number,number,number]};
 export function LiquidGlass({settings:s,wallpaper,children,onError,previewRect}:Props) {
   const canvas=useRef<HTMLCanvasElement>(null),root=useRef<HTMLDivElement>(null);
+  useGlassLight(root,s.motion);
   const id=`lens-${useId().replace(/:/g,'')}`;
   const [luminance,setLuminance]=useState<number|null>(null);
   const cap=s.quality==='high'?640:s.quality==='economy'?256:384;
@@ -70,7 +72,6 @@ export function LiquidGlass({settings:s,wallpaper,children,onError,previewRect}:
   const shade=s.material==='adaptive'&&luminance!==null?adaptiveShade(luminance,s.shade):s.shade;
   const scale=s.refraction*2, dispersion=s.quality==='economy'?0:s.dispersion;
   return <div className="glass glass-v2" data-material={s.material} data-optics={s.static_wallpaper?'texture':'translucent'} style={{'--glass-tint':s.tint,'--glass-shine':s.shine,'--glass-shade':shade,'--glass-thickness':`${s.thickness}px`} as CSSProperties} ref={root}
-    onPointerMove={e=>{const b=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty('--light-x',`${(e.clientX-b.left)/b.width*100}%`);e.currentTarget.style.setProperty('--light-y',`${(e.clientY-b.top)/b.height*100}%`)}}
     onPointerDown={e=>{if(e.button===0&&!(e.target as HTMLElement).closest('button,input,textarea,select,[data-no-drag]'))pressSurface(e.currentTarget,true,s.motion)}}
     onPointerUp={e=>pressSurface(e.currentTarget,false,s.motion)} onPointerCancel={e=>stopSurface(e.currentTarget)} onPointerLeave={e=>pressSurface(e.currentTarget,false,s.motion)}>
     {map&&<svg className="filter-defs" aria-hidden="true"><defs><filter id={id} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">

@@ -1,4 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+mod island;
+mod media;
 mod monitor;
 mod native;
 mod settings;
@@ -549,8 +551,25 @@ fn main() {
                 monitor: Mutex::new(None),
                 load_error,
             });
+            app.manage(island::Runtime::default());
             let restore_app = app.handle().clone();
             std::thread::spawn(move || {
+                {
+                    let runtime = restore_app.state::<island::Runtime>();
+                    let _lifecycle = runtime.lifecycle.lock().unwrap();
+                    let restore_island = restore_app
+                        .state::<State>()
+                        .layout
+                        .lock()
+                        .unwrap()
+                        .island
+                        .enabled;
+                    if restore_island {
+                        if let Err(error) = island::create(&restore_app) {
+                            let _ = restore_app.emit_to("main", "widget-error", error);
+                        }
+                    }
+                }
                 for id in restore {
                     if let Err(error) = create_window(&restore_app, &id) {
                         let _ =
@@ -570,6 +589,7 @@ fn main() {
                             .filter_map(|w| handle(&w).ok())
                             .collect();
                         let _ = native::maintain_desktop_layers(&handles);
+                        island::maintain(&task_app);
                     })
                     .is_err()
                 {
@@ -593,6 +613,14 @@ fn main() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            island::get_island_config,
+            island::island_monitors,
+            island::update_island,
+            island::island_snapshot,
+            island::island_media_action,
+            island::island_volume,
+            island::island_timer,
+            island::island_region,
             hide_panel,
             startup_enabled,
             set_startup,

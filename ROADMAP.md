@@ -10,7 +10,13 @@ Validação matemática, migração, compilação e regressões nativas registra
 
 Fusão de superfícies e morphing de geometria ficam associados ao consumidor real da fase 2; não serão apresentados como uma ilha fictícia nesta entrega. O motor mantém os widgets existentes utilizáveis.
 
-## 2. Dynamic Island — próxima prioridade, ainda não implementada
+## 2. Dynamic Island — primeiro incremento implementado na 0.5.0
+
+Implementado: janela separada, floating/notch, quatro aparências (Liquid/Adaptive como translucidez segura), monitor configurável, região nativa acompanhando expansão, máquina Idle/Compact/Expanded/Notification/Multi-Activity, mola interrompível, integração GSMTC, seleção de sessão, Core Audio e temporizador monotônico. Leitura real de duas sessões com faixa ativa e volume padrão passou. Regiões nativas foram verificadas com janela oculta.
+
+Pendente: inspeção visual/comportamental no WebView2, testes interativos dos comandos de mídia, jogos/fullscreen/DPI misto, benchmark de múltiplas superfícies, atualização por eventos no lugar do polling de 2 s, metaball merging e recursos de áudio adicionais. Não considerar toda a fase 2 concluída só por esta entrega.
+
+Escopo de referência da fase:
 
 - Papel FloatingIsland independente de DesktopWidget. Monitor selecionável; floating/notch; hit region acompanha a geometria; esconder em fullscreen.
 - Máquina de estados Idle, Compact, Expanded, Notification e Multi-Activity, com prioridades, expiração e restauração. Testes de interrupção/reversão antes de integrar provedores.

@@ -1,6 +1,24 @@
-# Liquid Desktop 0.4.0
+# Liquid Desktop 0.5.2
 
-Primeiro incremento do plano [Next Generation](ROADMAP.md): motor óptico e materiais. Os cinco widgets, bandeja, temas sincronizados e inicialização opcional continuam disponíveis. Dynamic Island, Top Bar, Control Center e Dock ainda não estão implementados nesta versão.
+## Correção do vidro — 0.5.2
+
+Retirado o Acrylic nativo da ilha: na 0.5.1 ele desenhava um retângulo de 480×340 fora do contorno. A ilha mantém transparência, reflexos direcionais e animações suaves. A opção de desfoque nativo foi removida; configurações antigas com ela ativada são ignoradas sem perder notas, posições ou aparência. Encerre a versão anterior pela bandeja antes de abrir a nova.
+
+O material atual da ilha não desfoca nem refrata o conteúdo de outros aplicativos. A refração dos widgets sobre wallpaper estático continua disponível. Um backdrop nativo só deve voltar após validação visual do recorte no desktop.
+
+## Dynamic Island — primeiro incremento funcional
+
+No painel, ative **Dynamic Island**. Escolha Floating Island ou Notch, aparência Black/Graphite/Liquid e monitor. A opção **Acima de aplicativos** vale apenas para a ilha; os widgets continuam na camada do desktop. A ilha começa desligada ao atualizar.
+
+Passe o cursor para expandir; clique no fundo ou em Fixar para mantê-la aberta. Esc recolhe. A geometria muda com mola interrompível, e o contorno nativo limita a área clicável. A janela é ocultada ao detectar uma aplicação cobrindo todo o monitor (verificação de 1 segundo, ainda requer validação com jogos e DPI misto).
+
+Mídia usa GSMTC: título, artista, capa quando fornecida, seleção de sessão, progresso e comandos suportados pelo player. Volume/mute usam a saída multimídia padrão do Windows via Core Audio. Não existe visualizador de áudio artificial. Players que não publicam sessões não aparecem; falhas são indicadas na ilha.
+
+O temporizador funciona enquanto o app está aberto, usa relógio monotônico e notifica na própria ilha ao terminar. Não é um alarme persistente: desativar a ilha ou encerrar o aplicativo cancela o temporizador. Mídia e timer podem aparecer simultaneamente. Aviso de conclusão tem prioridade sobre aviso de volume por 4,5 segundos.
+
+Liquid/Adaptive usam material translúcido de contraste seguro, sem refração de janelas externas ou adaptação por captura de tela. Não há metaball merging, notificações de terceiros, controles de microfone/dispositivo, Top Bar ou Dock nesta entrega. Esses itens continuam no ROADMAP.
+
+O plano [Next Generation](ROADMAP.md) começou pelo motor óptico da 0.4.0. Os cinco widgets, bandeja, temas sincronizados e inicialização opcional continuam disponíveis.
 
 ## Motor óptico e materiais
 
@@ -24,7 +42,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.4.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.5.2_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 
@@ -50,7 +68,7 @@ Para um wallpaper estático do Windows, desmarque a opção. `IDesktopWallpaper`
 
 O monitor usa `sysinfo` 0.37.2 com apenas os recursos de sistema/rede. Atualiza a cada 2 segundos enquanto o documento está visível. CPU precisa de uma amostra inicial: mostra um traço enquanto prepara a leitura. Gráficos começam vazios. Download/upload são a soma das interfaces, incluindo virtuais/VPN, e podem contabilizar um mesmo tráfego em mais de uma interface. Não são um teste de velocidade da internet. Taxas usam KiB/s e MiB/s; RAM usa GiB.
 
-Não há temperatura, GPU, clima, reprodução multimídia, galeria, dock ou calendário de eventos nesta versão. Não há valores fictícios para esses recursos. Toque/caneta, redimensionamento pelas bordas, múltiplas cópias do mesmo tipo, Win+D e DPI misto ainda não têm validação completa. Cada tipo pode ter uma janela ativa. O painel pode permanecer oculto na bandeja.
+Não há temperatura, GPU, clima, galeria, dock ou calendário de eventos nesta versão. O controle de mídia está disponível na Dynamic Island, para players que expõem sessões GSMTC. Não há valores fictícios para esses recursos. Toque/caneta, redimensionamento pelas bordas, múltiplas cópias do mesmo tipo, Win+D e DPI misto ainda não têm validação completa. Cada tipo pode ter uma janela ativa. O painel pode permanecer oculto na bandeja.
 
 ## Configurações e notas
 

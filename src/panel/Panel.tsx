@@ -5,6 +5,7 @@ import {widgetIds,type Layout,type Settings,type WidgetId} from '../types';
 import {catalog,WidgetIcon} from '../widgets/catalog';
 import {materials,materialPatch} from '../glass/materials';
 import {MaterialPreview} from '../glass/MaterialPreview';
+import {IslandSettings} from '../island/IslandSettings';
 
 function NumberField({label,value,min,max,onCommit}:{label:string;value:number;min:number;max:number;onCommit:(v:number)=>void}) {
   const [draft,setDraft]=useState(String(value));
@@ -35,13 +36,14 @@ export function Panel() {
   async function toggle(id:WidgetId){if(!layout)return;setBusy(id);setError('');try{await queue.current;await invoke(layout.widgets[id].enabled?'remove_widget':'create_widget',{id});await reload()}catch(e){setError(String(e))}finally{setBusy(null)}}
   async function applicationAction(action:()=>Promise<unknown>){setAppBusy(true);try{await queue.current;await action();setError('')}catch(e){setError(String(e))}finally{setAppBusy(false)}}
   const settings=layout?.widgets[selected],meta=catalog[selected];
-  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.4.0</span></header>
+  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.5.2</span></header>
     {error&&<div className="error" role="alert">{error}<button className="dismiss-error" aria-label="Fechar aviso" onClick={()=>setError('')}>×</button></div>}
     <section className="app-options" aria-label="Configurações gerais">
       <div><strong>Aplicativo</strong><small>Fechar ou minimizar mantém os widgets ativos. Use a bandeja para abrir ou sair.</small></div>
       <label className="toggle"><input type="checkbox" checked={startup===true} disabled={startup===null||appBusy} onChange={e=>{const enabled=e.target.checked;void applicationAction(async()=>setStartup(await invoke<boolean>('set_startup',{enabled})))}}/> Iniciar com o Windows</label>
       <button className="widget-toggle" disabled={appBusy||saving} onClick={()=>void applicationAction(()=>invoke('hide_panel'))}>Minimizar para bandeja</button>
     </section>
+    {layout&&<IslandSettings config={layout.island} onError={setError}/>}
     <div className="library-layout"><aside className="widget-library"><div className="library-label">Sua coleção <span>{layout?Object.values(layout.widgets).filter(s=>s.enabled).length:0} no desktop</span></div>
       {widgetIds.map(id=><article key={id} className={`widget-card ${selected===id?'selected':''}`}><button className="widget-pick" aria-pressed={selected===id} onClick={()=>setSelected(id)}><span className="catalog-icon"><WidgetIcon id={id}/></span><span><strong>{catalog[id].name}</strong><small>{catalog[id].description}</small></span></button><div className="widget-card-bottom"><span>{layout?.widgets[id].enabled?'No desktop':catalog[id].tag}</span><button className="widget-toggle" disabled={!layout||busy!==null} onClick={()=>toggle(id)}>{busy===id?'Aguarde…':layout?.widgets[id].enabled?'Remover':'+ Adicionar'}</button></div></article>)}
       <p className="library-footnote">Cada widget guarda suas próprias configurações. Os que estiverem ativos serão reabertos ao iniciar o app.</p>

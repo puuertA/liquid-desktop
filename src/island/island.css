@@ -1,0 +1,38 @@
+[data-surface=island],[data-surface=island] body,[data-surface=island] #root{background:transparent;width:100%;height:100%;overflow:hidden}
+.island-host{width:480px;height:340px;display:flex;justify-content:center;align-items:flex-start;color:#f5f5f5;user-select:none}
+.island{position:relative;flex-shrink:0;overflow:hidden;isolation:isolate;width:140px;height:36px;border-radius:18px;background:#08090bf5;color:#f5f5f5;outline:none;font-family:'Segoe UI Variable','Segoe UI',sans-serif}
+.island.appearance-graphite{background:#25292cf5}.island.appearance-liquid,.island.appearance-adaptive{background:rgba(20,27,33,.78)}
+.island-sheen,.island-edge{position:absolute;inset:0;pointer-events:none;border-radius:inherit}.island-edge{border:1px solid #ffffff16}.appearance-liquid .island-edge,.appearance-adaptive .island-edge{border-color:#ffffff48;box-shadow:inset 0 1px 1px #fff8,inset 0 -1px 2px #fff4}.appearance-liquid .island-sheen,.appearance-adaptive .island-sheen{background:radial-gradient(ellipse at 30% 0,#ffffff18,transparent 70%)}
+.island-topline{height:52px;display:flex;align-items:center;gap:12px;padding:8px 17px;position:relative;z-index:1}.state-idle .island-topline{height:36px;justify-content:center;padding:0 15px;gap:8px}.island-symbol{display:flex;color:#bbbfc4}.state-idle .island-symbol{display:none}.island-art{width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0;transition:width .24s,height .24s}.island-title{min-width:0;flex:1;overflow:hidden}.island-title strong{font-size:12px;font-weight:600;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.island-title small{display:block;font-size:11px;color:#b8bec4;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.idle-mark{display:block;text-align:center;font-size:11px;font-weight:550;letter-spacing:.4px;color:#bcc3c9}.timer-chip{font-variant-numeric:tabular-nums;font-size:11px;white-space:nowrap;padding:5px 8px;border-radius:15px;background:#ffffff10;color:#d7e7db}.state-multi .timer-chip{border-left:1px solid #ffffff18}
+.island button{display:inline-flex;align-items:center;justify-content:center;padding:6px;border-radius:12px;background:transparent;color:inherit;font-size:11px;font-weight:500;min-width:28px;min-height:28px}.island button:hover:not(:disabled){background:#ffffff12;filter:none}.island button:focus-visible,.island input:focus-visible,.island select:focus-visible,.island:focus-visible{outline:1px solid #dce8ed;outline-offset:-2px}.island input{accent-color:#dbe6df}.island input[type=range]{height:4px;margin:0;min-width:0}
+.island-expanded{position:relative;z-index:1;opacity:0;visibility:hidden;transition:opacity .12s ease;padding:0 22px 12px;width:440px;max-width:100%}.island[data-ready=true] .island-expanded{opacity:1;visibility:visible}.state-expanded .island-topline{height:76px;padding:16px 22px 10px;gap:14px}.state-expanded .island-art{width:50px;height:50px;border-radius:11px}.state-expanded .island-title strong{font-size:14px}.island-progress{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;color:#a5adb6;font-variant-numeric:tabular-nums}.island-progress input{grid-column:1/-1}.island-progress span:last-child{text-align:right}.island-playback{display:flex;align-items:center;gap:8px;margin:6px 0}.island .main-play{background:#ffffff12}.island select{margin-left:auto;max-width:200px;border:0;border-radius:7px;background:#ffffff0d;color:#c3cbd1;padding:5px;font-size:10px}.island option{background:#24292e;color:white}.island-volume{display:flex;align-items:center;gap:10px;border-top:1px solid #ffffff10;padding-top:8px;margin-top:8px}.island-volume input{flex:1}.island-volume>span{font-size:10px;min-width:34px;text-align:right;font-variant-numeric:tabular-nums}.island-timer{display:flex;align-items:center;gap:9px;margin-top:8px;font-size:11px;color:#c9d2d8}.island-timer input{width:55px;background:#ffffff0b;border:1px solid #ffffff16;border-radius:7px;color:white;padding:5px;font-size:11px}.island-timer .pin-control{margin-left:auto;color:#9eafb9}.island-hint{display:block;color:#8d98a2;font-size:9px;margin-top:9px;text-align:center}.island-empty{font-size:12px;color:#aeb8c1;margin:12px 0 20px}.island-error{font-size:10px;color:#ffc6ad;max-height:24px;overflow:auto;margin:4px 0}.island-notice{position:absolute;top:-74px;left:12px;right:12px;background:#202b23;color:#ddeddf;font-size:11px;padding:8px;border-radius:10px;z-index:4;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.island-art,.island-expanded{transition:none}}
+
+/* Continuous pointer-lit shell; native Acrylic is intentionally disabled. */
+.island{--expansion:0;--topline:36px;--light-x:28%;--light-y:12%;contain:layout style}
+.island-caustic{position:absolute;inset:2px;border-radius:inherit;pointer-events:none}
+:is(.appearance-liquid,.appearance-adaptive) .island-sheen{
+  background:radial-gradient(ellipse 95% 110% at var(--light-x) var(--light-y),#ffffff26,transparent 66%),linear-gradient(165deg,#e0efff15 0%,transparent 35%,#07101d30 75%,#e8f4ff12);
+  box-shadow:inset 0 1px 1px #ffffff80,inset 0 -1px 1px #fff5,inset 1px 0 1px #dcefff30;
+}
+:is(.appearance-liquid,.appearance-adaptive) .island-caustic{
+  box-shadow:inset 0 0 8px #d6eaff12,inset 0 -3px 5px #e8f7ff24;
+  background:radial-gradient(ellipse 70% 10% at calc(100% - var(--light-x)) 100%,#ddf2ff50,transparent 85%);
+}
+:is(.appearance-liquid,.appearance-adaptive) .island-edge{
+  border:0;padding:1px;box-shadow:none;
+  background:conic-gradient(from 130deg at var(--light-x) var(--light-y),#ffffff18,#e1f1ffbb 17%,#ffffff18 34%,#b7d4ff66 48%,#fff9 65%,#fff1 82%,#ffffff18);
+  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+}
+:is(.appearance-liquid,.appearance-adaptive) :is(.island-topline,.island-expanded){text-shadow:0 1px 3px #0009}
+.island .island-topline{height:var(--topline);padding:calc(8px + 8px * var(--expansion)) calc(17px + 5px * var(--expansion)) calc(8px + 2px * var(--expansion));gap:calc(12px + 2px * var(--expansion))}
+.island.state-idle .island-topline{padding:0 15px;gap:8px}
+.island .island-art{width:calc(34px + 16px * var(--expansion));height:calc(34px + 16px * var(--expansion));border-radius:calc(8px + 3px * var(--expansion));transition:none}
+.island .island-title strong{font-size:calc(12px + 2px * var(--expansion))}
+.island-expanded{transform:translateY(8px);transition:opacity .22s ease,transform .32s cubic-bezier(.2,.75,.2,1),visibility .22s;will-change:auto}
+.island[data-ready=true] .island-expanded{transform:translateY(0)}
+.island button{transition:background-color .16s ease,transform .18s ease}
+.island button:active:not(:disabled){transform:scale(.94)}
+.island[data-motion=false] :is(.island-expanded,button){transition:none;transform:none}
+@media(prefers-reduced-motion:reduce){.island :is(.island-expanded,button){transition:none;transform:none}}

@@ -8,7 +8,7 @@ export type Settings = {
   thickness:number; bezel:number; dispersion:number; frost:number;
   quality:'economy'|'balanced'|'high'; motion:boolean;
 };
-export type Layout = {version:number; sync_theme:boolean; widgets:Record<WidgetId,Settings>};
+export type Layout = {version:number; sync_theme:boolean; island:import('./island/types').IslandConfig; widgets:Record<WidgetId,Settings>};
 export type Monitor = {id:string;rect:[number,number,number,number];image:string|null;error:string|null};
 export type Wallpaper = {mode:number;color:number;monitors:Monitor[]};
 export type SystemSnapshot = {cpu:number|null;memory_used:number;memory_total:number;download:number|null;upload:number|null;interfaces:number;sequence:number};

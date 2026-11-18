@@ -1,5 +1,31 @@
 # Validação
 
+## Versão 0.5.2 — regressão de Acrylic
+
+- Build release e instalador NSIS concluídos: `Liquid Desktop_0.5.2_x64-setup.exe`.
+- Screenshot do usuário confirmou que Acrylic pintava todo o HWND 480×340 apesar do recorte da ilha. A validação anterior por compilação/testes não demonstrava recorte visual correto.
+- Removidos aplicação de Acrylic, comando IPC, dependência direta e opção de interface. Nova janela usa apenas material translúcido CSS e região nativa; animação e reflexos continuam.
+- Passaram 24 testes JavaScript e 9 Rust; 5 testes nativos/hardware opt-in não foram executados. Novo teste carrega configuração 0.5.1 com blur ativado, preserva notas/posição/aparência e confirma que o campo legado não é salvo novamente.
+- TypeScript/Vite passaram. Validação visual do novo instalador no desktop ainda pendente. O processo anterior precisa ser encerrado para que seu backdrop seja destruído.
+
+## Versão 0.5.1 — movimento e vidro nativo
+
+- Build release e instalador NSIS concluídos: `Liquid Desktop_0.5.1_x64-setup.exe` (2,20 MiB).
+- Passaram 24 testes JavaScript, incluindo equivalência da trajetória em 30/60/144 Hz, inversões rápidas com conservação de velocidade e continuidade da geometria do cabeçalho. Isso valida matemática, não FPS real.
+- Passaram 8 testes Rust; 5 testes opt-in de desktop/hardware não foram repetidos nesta versão. Migração preserva dados anteriores e a preferência de blur desligado.
+- TypeScript/Vite e cargo check passaram. Desfoque usa `window-vibrancy` já presente transitivamente, agora como dependência direta para tratar erros.
+- Pendente: inspeção visual no WebView2, contraste com fundos claros, Acrylic sobre Wallpaper Engine/aplicativos, clipping durante inversões rápidas, DPI misto e custo GPU. A indisponibilidade anterior do helper nativo não foi resolvida neste incremento. Não há afirmação de refração ao vivo ou FPS medido.
+
+## Versão 0.5.0 — Dynamic Island, primeiro incremento
+
+- Build Rust release e instalador NSIS concluídos: `Liquid Desktop_0.5.0_x64-setup.exe` (2,19 MiB). SHA-256: `19e26093f12d49d6c662812a39ecfd33f2d7065939d068ef2bcb816351ec84be`.
+- Passaram 21 testes JavaScript: arbitragem de atividade, expiração/prioridade de avisos, coalescência de geometria, mola e regressões anteriores.
+- Passaram 13 testes Rust, incluindo todos os opt-in nativos: a região da ilha exclui margens, cobre a expansão, preserva o topo conectado do notch e volta à cápsula. Moldura, arraste e ordem dos widgets anteriores passaram.
+- Leitura GSMTC real: duas sessões, com faixa ativa. Leitura real do endpoint de áudio passou. Teste não executou play/pause/seek nem alterou volume/mute. Falhas de sessão inexistente foram rejeitadas.
+- Migração mantém notas e posições e adiciona ilha desligada; configuração inválida de monitor é rejeitada. TypeScript/Vite passaram.
+- Pendente: inspeção visual WebView2, gestos rápidos durante expansão, comandos de mídia nos players, fullscreen/jogos, DPI misto, mudança de monitores, Win+D/Alt+Tab e benchmark CPU/GPU/RAM. O helper de UI estava indisponível na validação anterior; testes de HWND oculto não equivalem à validação visual.
+- Não implementado: metaball merging, medição/visualizador de áudio, notificações de terceiros, seleção de endpoint/microfone, Top Bar e Dock. Não há alegação de 60 FPS medidos.
+
 ## Versão 0.4.0 — primeiro incremento do motor óptico
 
 - Build Rust release e instalador NSIS concluídos: `Liquid Desktop_0.4.0_x64-setup.exe` (2,13 MiB), com aviso de licença QuickLiquid incluído nos recursos.

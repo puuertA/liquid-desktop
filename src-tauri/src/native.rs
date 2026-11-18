@@ -88,11 +88,107 @@ unsafe extern "system" {
 
     fn SetWindowRgn(hwnd: Hwnd, region: Hwnd, redraw: i32) -> i32;
     fn GetPhysicalCursorPos(point: *mut Point) -> i32;
+    fn GetForegroundWindow() -> Hwnd;
+    fn GetWindowThreadProcessId(hwnd: Hwnd, process: *mut u32) -> u32;
 }
 #[link(name = "gdi32")]
 unsafe extern "system" {
     fn CreateRoundRectRgn(l: i32, t: i32, r: i32, b: i32, w: i32, h: i32) -> Hwnd;
     fn DeleteObject(object: Hwnd) -> i32;
+    fn CreateRectRgn(l: i32, t: i32, r: i32, b: i32) -> Hwnd;
+    fn CombineRgn(dest: Hwnd, a: Hwnd, b: Hwnd, mode: i32) -> i32;
+}
+/// Floating surfaces have their own layer; never feed them into widget ordering.
+pub fn position_surface(
+    hwnd: isize,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    above: bool,
+) -> Result<(), String> {
+    unsafe {
+        remove_frame(hwnd)?;
+        if SetWindowPos(
+            hwnd as Hwnd,
+            if above {
+                -1isize as Hwnd
+            } else {
+                -2isize as Hwnd
+            },
+            x,
+            y,
+            w,
+            h,
+            0x10 | 0x200,
+        ) == 0
+        {
+            return Err("Falha ao posicionar superfície".into());
+        }
+        Ok(())
+    }
+}
+/// The OS clips painting AND hit-testing to this region, including transparent margins.
+pub fn surface_region(
+    hwnd: isize,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    radius: i32,
+    notch: bool,
+) -> Result<(), String> {
+    unsafe {
+        let region = CreateRoundRectRgn(x, y, x + w + 1, y + h + 1, radius * 2, radius * 2);
+        if region.is_null() {
+            return Err("Falha ao criar região da ilha".into());
+        }
+        if notch {
+            let top = CreateRectRgn(x, y, x + w + 1, y + radius + 1);
+            if top.is_null() {
+                DeleteObject(region);
+                return Err("Falha ao criar notch".into());
+            }
+            let result = CombineRgn(region, region, top, 2);
+            DeleteObject(top);
+            if result == 0 {
+                DeleteObject(region);
+                return Err("Falha ao compor notch".into());
+            }
+        }
+        if SetWindowRgn(hwnd as Hwnd, region, 1) == 0 {
+            DeleteObject(region);
+            return Err("Falha ao atualizar região da ilha".into());
+        }
+        Ok(())
+    }
+}
+pub fn foreground_fullscreen(monitor: [i32; 4]) -> bool {
+    unsafe {
+        let h = GetForegroundWindow();
+        if h.is_null() {
+            return false;
+        }
+        let mut process = 0;
+        GetWindowThreadProcessId(h, &mut process);
+        if process == std::process::id() {
+            return false;
+        }
+        let mut name = [0u16; 256];
+        let len = GetClassNameW(h, name.as_mut_ptr(), 256);
+        let class = String::from_utf16_lossy(&name[..len.max(0) as usize]);
+        if ["Progman", "WorkerW", "Shell_TrayWnd"].contains(&class.as_str()) {
+            return false;
+        }
+        let mut r = Rect::default();
+        if GetWindowRect(h, &mut r) == 0 {
+            return false;
+        }
+        r.left <= monitor[0]
+            && r.top <= monitor[1]
+            && r.right >= monitor[0] + monitor[2]
+            && r.bottom >= monitor[1] + monitor[3]
+    }
 }
 fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(Some(0)).collect()
@@ -321,6 +417,11 @@ mod tests {
         fn DestroyWindow(hwnd: Hwnd) -> i32;
         fn GetClientRect(hwnd: Hwnd, rect: *mut Rect) -> i32;
         fn ClientToScreen(hwnd: Hwnd, point: *mut Point) -> i32;
+        fn GetWindowRgn(hwnd: Hwnd, region: Hwnd) -> i32;
+    }
+    #[link(name = "gdi32")]
+    unsafe extern "system" {
+        fn PtInRegion(region: Hwnd, x: i32, y: i32) -> i32;
     }
     struct TestWindow(Hwnd);
     impl Drop for TestWindow {
@@ -328,6 +429,47 @@ mod tests {
             unsafe {
                 DestroyWindow(self.0);
             }
+        }
+    }
+    #[test]
+    #[ignore = "Creates a hidden island HWND and verifies its native clipping/hit region"]
+    fn island_region_excludes_transparent_margins_and_tracks_expansion() {
+        unsafe {
+            let null = std::ptr::null_mut();
+            let h = CreateWindowExW(
+                0x80,
+                wide("STATIC").as_ptr(),
+                wide("Island region test").as_ptr(),
+                0x80000000,
+                0,
+                0,
+                480,
+                340,
+                null,
+                null,
+                null,
+                null,
+            );
+            assert!(!h.is_null());
+            let _window = TestWindow(h);
+            configure_desktop_window(h as isize).unwrap();
+            let region = CreateRectRgn(0, 0, 0, 0);
+            assert!(!region.is_null());
+            surface_region(h as isize, 170, 0, 140, 36, 18, false).unwrap();
+            assert_ne!(GetWindowRgn(h, region), 0);
+            assert_eq!(PtInRegion(region, 10, 10), 0);
+            assert_ne!(PtInRegion(region, 240, 18), 0);
+            assert_eq!(PtInRegion(region, 240, 100), 0);
+            assert_eq!(PtInRegion(region, 170, 0), 0);
+            surface_region(h as isize, 20, 0, 440, 306, 32, true).unwrap();
+            assert_ne!(GetWindowRgn(h, region), 0);
+            assert_ne!(PtInRegion(region, 21, 1), 0);
+            assert_ne!(PtInRegion(region, 240, 290), 0);
+            assert_eq!(PtInRegion(region, 10, 200), 0);
+            surface_region(h as isize, 170, 0, 140, 36, 18, false).unwrap();
+            GetWindowRgn(h, region);
+            assert_eq!(PtInRegion(region, 240, 100), 0);
+            DeleteObject(region);
         }
     }
 

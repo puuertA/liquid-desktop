@@ -19,6 +19,12 @@ SVG não amostra pixels de outras janelas. `backdrop-filter` do WebView2 não é
 
 O código original deste projeto usa MIT. Dependências mantêm suas respectivas licenças; revisar inventário e notices antes de distribuição pública.
 
+## Dynamic Island — APIs 0.5.0
+
+[GSMTC SessionManager](https://learn.microsoft.com/en-us/uwp/api/windows.media.control.globalsystemmediatransportcontrolssessionmanager) enumera apenas aplicativos que publicam sessões de mídia. Os controles seguem os flags e os resultados Try* do provedor. [TryChangePlaybackPositionAsync](https://learn.microsoft.com/en-us/uwp/api/windows.media.control.globalsystemmediatransportcontrolssession.trychangeplaybackpositionasync) recebe ticks de 100 ns; a UI usa segundos e valida o intervalo antes da conversão. Não há automação de interfaces de Spotify/navegadores.
+
+[IAudioEndpointVolume](https://learn.microsoft.com/en-us/windows/win32/api/endpointvolume/nn-endpointvolume-iaudioendpointvolume) oferece volume escalar 0–1 e mute no endpoint padrão. A leitura foi testada sem alterar áudio/reprodução. Sessões, imagens e áudio são locais; nenhuma credencial ou serviço externo foi adicionado.
+
 ## Next Generation — referências de 17/11/2026
 
 - [NotchPixel](https://notchpixel.com): referência funcional para cápsula/notch que expande ao interagir e reúne atividades do Windows. O produto anuncia integrações variadas; isso não comprova que essas APIs já estejam disponíveis no Liquid Desktop.
@@ -46,3 +52,7 @@ A mensagem enviada pelo usuário localizou a falha na exigência de IsWindow(Get
 ## Faixa persistente — 0.1.4
 
 A captura do usuário demonstrou que limpar os bits de estilo não bastava. Conforme [WM_NCCALCSIZE](https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-nccalcsize), retornar zero sem alterar os retângulos faz o conteúdo ocupar a janela inteira. A implementação intercepta também WM_NCPAINT e preserva a lógica de foco de Tao via [WM_NCACTIVATE com lParam=-1](https://learn.microsoft.com/en-us/windows/win32/winmsg/wm-ncactivate). [SetWindowSubclass](https://learn.microsoft.com/en-us/windows/win32/api/commctrl/nf-commctrl-setwindowsubclass) exige a thread proprietária: a configuração nativa foi movida para run_on_main_thread. Testes verificam origem e tamanho do client rect, não somente flags.
+
+## Vidro nativo — 0.5.1
+
+[Tauri: efeitos e limitações de Acrylic](https://v2.tauri.app/reference/config/). [Microsoft: DwmEnableBlurBehindWindow não produz blur desde Windows 8](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmenableblurbehindwindow). Implementação local conferida em window-vibrancy 0.8.1: Acrylic usa backdrop transitório em Windows recentes e accent policy nos anteriores compatíveis. Janela mantém tamanho fixo; custo do recorte animado ainda não foi medido.

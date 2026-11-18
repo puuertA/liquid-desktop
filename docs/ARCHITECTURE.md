@@ -1,4 +1,16 @@
-# Arquitetura — 0.4.0
+# Arquitetura — 0.5.2
+
+A 0.5.2 remove o comando de Acrylic, sua dependência direta e o controle de desfoque. O compositor pintava além de SetWindowRgn no desktop do usuário. O campo antigo native_blur é ignorado por serde e desaparece ao salvar; a janela nova não aplica efeito nativo. Preservadas animação, recorte e iluminação CSS. A correção exige encerrar o processo anterior e iniciar o atualizado.
+
+## FloatingIsland
+
+`island.rs` gerencia configuração, ciclo de vida, monitor, temporizador e comandos autorizados apenas para a janela island (configuração somente main). Layout schema 2 ganhou campo island com default desativado; a migração preserva widgets/notas. Um mutex de ciclo de vida serializa ativação e restauração. A ilha é uma janela TOOLWINDOW de 480×340 unidades lógicas, independente da lista IDS e da ordenação DesktopWidget.
+
+SetWindowRgn recebe somente o contorno visível, centralizado na janela; margens transparentes não pertencem à região nativa. Notch combina retângulo superior e contorno arredondado. Frontend mantém no máximo uma atualização de região em voo e coalesce frames intermediários, enviando a geometria final. Mudanças de DPI reenviam o contorno. A geometria visual usa ticker GSAP somente durante transições.
+
+`media.rs` inicializa WinRT/COM no worker, mantém manager e identidades de sessões GSMTC, limita a lista a 16 sessões e as capas a 2 MiB. Não aceita IDs arbitrários de aplicativos para controle: ações resolvem uma sessão enumerada. Progresso deriva da posição, timestamp e taxa reais do provedor. Core Audio usa IMMDeviceEnumerator/IAudioEndpointVolume para saída multimídia padrão. Não há captura/loopback de áudio ou tela. Leituras usam polling de 2 s somente com ilha visível e uma solicitação em voo; isso ainda deve evoluir para eventos compartilhados.
+
+Temporizador é um Instant no runtime Rust, não depende do intervalo do frontend e não é persistido entre execuções. Notificações e arbitragem são módulos puros testáveis; timer concluído tem prioridade 3, volume/início têm prioridade 1, duração de 4,5 s. Sair/desativar cancela o timer. A manutenção de 1 s verifica fullscreen e posição do monitor; jogos exclusivos e mudanças de escala ainda dependem de validação interativa.
 
 ## Motor gráfico compartilhado
 
@@ -10,7 +22,7 @@
 
 Settings ganhou campos aditivos com defaults: material custom, espessura 18, borda 26, dispersão 0,1, difusão 0,35, qualidade balanced e movimento ligado. Schema 2 permanece compatível; valores existentes não são resetados. Sincronização inclui os novos campos e mantém conteúdo/geometria individuais. Backend valida enums, finitude e limites.
 
-O comportamento nativo DesktopWidget não foi substituído. Os papéis FloatingIsland, DesktopBar, Dock e Flyout ainda serão implementados separadamente conforme ROADMAP; a lista de IDs continua restrita aos cinco widgets.
+O comportamento nativo DesktopWidget não foi substituído. FloatingIsland tem uma janela independente desde 0.5.0; DesktopBar, Dock e Flyout continuam previstos no ROADMAP. A lista de IDs de widgets continua restrita aos cinco widgets.
 
 ## Aplicativo em segundo plano
 
@@ -48,4 +60,4 @@ Persistência cria backup inicial, grava arquivo temporário e renomeia. Acesso 
 
 ## Próximos passos
 
-Validar visualmente os novos widgets em múltiplos DPI, medir custo de cinco WebViews, ampliar cache de wallpaper compartilhado, adicionar múltiplas instâncias e novos provedores reais. Clima, mídia, temperatura/GPU, galeria, dock e Dynamic Island permanecem etapas futuras.
+Validar visualmente widgets e Dynamic Island em múltiplos DPI, medir custo das WebViews, ampliar cache de wallpaper compartilhado, adicionar múltiplas instâncias e novos provedores reais. Ampliar a validação dos comandos de mídia nos players. Clima, temperatura/GPU, galeria, Top Bar e Dock permanecem etapas futuras.

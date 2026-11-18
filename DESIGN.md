@@ -1,5 +1,13 @@
 # Liquid Desktop — linguagem visual
 
+## Dynamic Island 0.5.2
+
+Acrylic foi retirado na 0.5.2 após evidência visual de vazamento para o retângulo da janela. Permanecem transparência, borda iluminada, reflexos suaves e animações contínuas. Não há blur ou refração ao vivo na ilha.
+
+Superfície ancorada no centro superior, pequena em repouso, com texto contido e tipografia 11–14 px. Black é o padrão para contraste estável sobre aplicativos. Graphite suaviza o preto; Liquid e Adaptive oferecem borda/reflexos translúcidos sem afirmar acesso ao conteúdo externo. A área expandida pertence ao mesmo contorno. Capa permanece no mesmo elemento; controles são compactos e só ficam interativos quando há espaço.
+
+A ilha é opt-in e independente do material dos widgets. Não há barras/ondas falsas de áudio. Erros de provedor e ausência de sessão têm estados explícitos. A aparência Adaptive é um fallback de contraste seguro neste incremento, não análise de luminosidade de outros aplicativos.
+
 ## Direção 0.4.0
 
 O material deve ter centro limpo, distorção restrita à borda e reflexos de baixa amplitude. Textos ficam em uma camada não refratada. Não há neon, bloom externo ou movimento contínuo. Canopy orienta continuidade de forma e legibilidade; NotchPixel orienta a utilidade das futuras superfícies; a imagem desktop fornecida orienta proporção e organização. Não foram copiados assets desses produtos. O vídeo citado no novo escopo não estava anexado.
