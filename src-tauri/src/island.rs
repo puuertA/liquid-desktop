@@ -8,6 +8,7 @@ use tauri::{Emitter, Manager};
 #[serde(default)]
 pub struct Config {
     pub enabled: bool,
+    pub static_wallpaper: bool,
     pub form: String,
     pub appearance: String,
     pub above_apps: bool,
@@ -18,6 +19,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             enabled: false,
+            static_wallpaper: false,
             form: "floating".into(),
             appearance: "black".into(),
             above_apps: true,

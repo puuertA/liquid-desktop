@@ -9,10 +9,15 @@ test('convex lens has a clear center, continuous rim and a positive interior pea
 test('map samples inward and is mirror symmetric within 8-bit rounding',()=>{
   const r=rasterizeLens({width:360,height:220,cap:640});
   const pixel=(x,y)=>Array.from(r.data.slice((y*r.width+x)*4,(y*r.width+x)*4+4));
-  assert.deepEqual(pixel(180,110),[128,128,128,255]);
-  assert.ok(pixel(12,110)[0]>128);assert.ok(pixel(347,110)[0]<128);
-  assert.equal(pixel(12,110)[0]+pixel(347,110)[0],255);
-  assert.ok(r.computed<360*220/2);
+  const mid=Math.floor(r.height/2),left=Math.round(12*r.width/360),right=r.width-1-left;
+  assert.deepEqual(pixel(Math.floor(r.width/2),mid),[128,128,128,255]);
+  assert.ok(pixel(left,mid)[0]>128);assert.ok(pixel(right,mid)[0]<128);
+  assert.equal(pixel(left,mid)[0]+pixel(right,mid)[0],255);
+  assert.ok(r.computed<r.width*r.height/2);
+});
+test('high DPI maps retain physical detail without exceeding the cap',()=>{
+  const r=rasterizeLens({width:360,height:220,cap:720});
+  assert.equal(r.width,720);assert.equal(r.height,440);
 });
 test('tiny capsule and large resized surfaces remain finite and bounded',()=>{
   for(const [width,height] of [[120,32],[640,600],[200,180]]){

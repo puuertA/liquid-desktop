@@ -16,7 +16,7 @@ export function LiquidGlass({settings:s,wallpaper,children,onError,previewRect}:
   useGlassLight(root,s.motion);
   const id=`lens-${useId().replace(/:/g,'')}`;
   const [luminance,setLuminance]=useState<number|null>(null);
-  const cap=s.quality==='high'?640:s.quality==='economy'?256:384;
+  const cap=Math.ceil(Math.max(s.width,s.height)*window.devicePixelRatio*(s.quality==='high'?1.5:1));
   const map=useMemo(()=>s.static_wallpaper?lensMap({width:s.width,height:s.height,radius:32,bezel:s.bezel,thickness:s.thickness,cap}):null,[s.static_wallpaper,s.width,s.height,s.bezel,s.thickness,cap]);
   useEffect(()=>{
     const element=root.current;if(!element)return;

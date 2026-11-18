@@ -7,6 +7,7 @@ use tauri::{Emitter, Manager};
 #[serde(default)]
 pub struct Config {
     pub enabled: bool,
+    pub static_wallpaper: bool,
     pub monitor: usize,
     pub tint: String,
     pub opacity: f64,
@@ -21,7 +22,7 @@ pub struct Config {
 }
 impl Default for Config {
     fn default() -> Self {
-        Self { enabled:false, monitor:0, tint:"#18232d".into(), opacity:0.82,
+        Self { static_wallpaper:false, enabled:false, monitor:0, tint:"#18232d".into(), opacity:0.82,
             above_apps:true, hide_fullscreen:true, show_seconds:false, show_date:true,
             show_cpu:true, show_memory:true, show_network:true, show_volume:true }
     }

@@ -23,7 +23,7 @@ export function roundedDistance(x, y, width, height, radius) {
 }
 
 export function rasterizeLens({width, height, radius = 32, bezel = 26, thickness = 18, cap = 384}) {
-  const ratio = Math.min(1, cap / Math.max(width, height));
+  const ratio = Math.min(2, cap / Math.max(width, height));
   const w = Math.max(2, Math.round(width * ratio)), h = Math.max(2, Math.round(height * ratio));
   radius = Math.min(radius, width / 2, height / 2);
   bezel = Math.max(1, Math.min(bezel, width / 2, height / 2));

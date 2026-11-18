@@ -193,3 +193,12 @@ Roteiro adicional: ativar edição, arrastar pelo centro e pelas bordas, soltar 
 
 Verificação manual desta versão: ativar Widgets unidos; aproximar e afastar dois widgets com edição ligada; confirmar união e clique no desktop nas lacunas; cancelar arraste com Esc; reiniciar e conferir posições; desativar união e conferir posições individuais/notas. Testar Material → Fundo animado ligado/desligado, cor e dispersão. Abrir Control Center pela Top Bar, escolher endpoint, ajustar volume/mute, retirar o dispositivo, fechar por Esc/perda de foco e verificar os atalhos às configurações.
 Build Rust release e instalador NSIS x64 0.7.0 concluídos com sucesso. Tamanho: 2431688 bytes. SHA-256: B4D0C53FB3BD438F69CCF633428FEAAC467127D7161A7A0D96F6A4F68F541CD2.
+
+## 0.7.1 — correção de resolução e vidro em overlays
+
+Passaram 28 testes JavaScript (incluindo mapas em DPI 2×), 15 testes Rust e, separadamente, o teste nativo da máscara com lacunas. TypeScript/Vite passaram. O teste de simetria foi atualizado para amostrar coordenadas proporcionais à resolução, preservando as verificações de direção, neutralidade e simetria.
+
+Cena do shader real inspecionada em Edge headless/SwiftShader: `images/glass-071.png`. Inclui uma barra fina, notch com topo reto e widgets unidos, contornos antialiased e separação RGB. Isso valida compilação/renderização do shader, não a integração interativa no WebView2 nem uma comparação de desempenho na GPU do usuário.
+
+Pendentes: inspeção no desktop do usuário da expansão da ilha, barra com/sem lacuna, DPI misto e comparação do serrilhado relatado. Não há captura ao vivo do Wallpaper Engine. Refração estática nas superfícies é opt-in; áreas acima de aplicativos amostram o wallpaper, não esses aplicativos.
+Build release e NSIS 0.7.1 concluídos. Instalador x64: 2424867 bytes. SHA-256: 435E9C0740EC97963ACC471F53FA263A08CA7F7C24C0F98656B716460B3C61AD.

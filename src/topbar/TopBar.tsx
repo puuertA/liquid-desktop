@@ -1,10 +1,11 @@
-import {useEffect,useRef,useState,type CSSProperties} from 'react';
+import {useCallback,useEffect,useRef,useState,type CSSProperties} from 'react';
 import {invoke} from '@tauri-apps/api/core';
 import {listen} from '@tauri-apps/api/event';
 import {CommitSlider} from '../island/CommitSlider';
 import type {TopBarSnapshot} from './types';
 import {rate,percent,memoryPercent,tintColor} from './format.mjs';
 import './topbar.css';
+import {SurfaceGlass} from '../glass/SurfaceGlass';
 
 function Icon({audio=false,muted=false}:{audio?:boolean;muted?:boolean}){
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={audio?`M3 9h4l5-4v14l-5-4H3z ${muted?'M16 9l5 6M21 9l-5 6':'M16 8q5 4 0 8'}`:'M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 14h6v6h-6z'}/></svg>;
@@ -12,6 +13,7 @@ function Icon({audio=false,muted=false}:{audio?:boolean;muted?:boolean}){
 export function TopBar(){
   const [snapshot,setSnapshot]=useState<TopBarSnapshot|null>(null),[now,setNow]=useState(new Date()),[error,setError]=useState(''),[busy,setBusy]=useState(false);
   const mounted=useRef(false);
+  const report=useCallback((message:string)=>setError(message),[]);
   useEffect(()=>{
     mounted.current=true;let disposed=false,pending=false;
     async function refresh(){
@@ -35,8 +37,8 @@ export function TopBar(){
   const {config:c,system,volume:audio,shared_island:shared}=snapshot;
   const time=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',...(c.show_seconds?{second:'2-digit'}:{})});
   const status=error||snapshot.volume_error;
-  return <div className="topbar" data-shared={shared} style={{'--bar-tint':tintColor(c.tint,c.opacity),'--bar-gap':shared?'480px':'0px'} as CSSProperties}>
-    <div className="bar-segment bar-left"><div className="bar-items">
+  return <div className="topbar" data-shared={shared} data-optical={true} style={{'--bar-tint':tintColor(c.tint,c.opacity),'--bar-gap':shared?'480px':'0px'} as CSSProperties}>
+    <SurfaceGlass selector={shared?'.bar-segment':'.topbar'} staticWallpaper={c.static_wallpaper} tint={c.tint} opacity={c.opacity*.35} onError={report}/><div className="bar-segment bar-left"><div className="bar-items">
       <button className="bar-launcher" onClick={open} title="Abrir painel Liquid Desktop" aria-label="Abrir painel Liquid Desktop"><Icon/><span>Liquid Desktop</span></button>
       <time dateTime={now.toISOString()} title={now.toLocaleString('pt-BR')}><span className="bar-date">{c.show_date&&now.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})}</span><strong>{time}</strong></time>
     </div></div>

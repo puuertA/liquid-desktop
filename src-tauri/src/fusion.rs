@@ -52,13 +52,13 @@ fn region(w:&tauri::WebviewWindow,s:&Snapshot,shapes:&[Shape])->Result<(),String
         let minx=(shapes.iter().map(|r|r.x-16.0).fold(s.width,f64::min)*s.scale).floor().max(0.0) as i32;
         let miny=(shapes.iter().map(|r|r.y-16.0).fold(s.height,f64::min)*s.scale).floor().max(0.0) as i32;
         let maxy=(shapes.iter().map(|r|r.y+r.height+16.0).fold(0.0,f64::max)*s.scale).ceil().min(s.screen[3] as f64) as i32;
-        // Conservative two-physical-pixel scanlines, only inside the group's bounds.
-        for y in (miny..maxy).step_by(2){let mut start=None;
-            for x in (minx..=maxx).step_by(2){let inside=x<maxx&&distance((x+1)as f64/s.scale,(y+1)as f64/s.scale,shapes)<=1.5/s.scale;
+        // Conservative one-physical-pixel scanlines, only inside the group's bounds.
+        for y in (miny..maxy).step_by(1){let mut start=None;
+            for x in (minx..=maxx).step_by(1){let inside=x<maxx&&distance((x as f64+0.5)/s.scale,(y as f64+0.5)/s.scale,shapes)<=1.0/s.scale;
                 if inside&&start.is_none(){start=Some(x)}
-                if !inside{if let Some(left)=start.take(){rows.push([left,y,x,(y+2).min(s.screen[3])]);}}
+                if !inside{if let Some(left)=start.take(){rows.push([left,y,x,(y+1).min(s.screen[3])]);}}
             }
-            if let Some(left)=start{rows.push([left,y,maxx,(y+2).min(s.screen[3])]);}
+            if let Some(left)=start{rows.push([left,y,maxx,(y+1).min(s.screen[3])]);}
         }
     }
     native::scanline_region(handle(w)?,&rows)

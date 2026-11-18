@@ -38,7 +38,7 @@ export function Panel() {
   async function toggle(id:WidgetId){if(!layout)return;setBusy(id);setError('');try{await queue.current;await invoke(layout.widgets[id].enabled?'remove_widget':'create_widget',{id});await reload()}catch(e){setError(String(e))}finally{setBusy(null)}}
   async function applicationAction(action:()=>Promise<unknown>){setAppBusy(true);try{await queue.current;await action();setError('')}catch(e){setError(String(e))}finally{setAppBusy(false)}}
   const settings=layout?.widgets[selected],meta=catalog[selected];
-  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.7.0</span></header>
+  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.7.1</span></header>
     {error&&<div className="error" role="alert">{error}<button className="dismiss-error" aria-label="Fechar aviso" onClick={()=>setError('')}>×</button></div>}
     <section className="app-options" aria-label="Configurações gerais">
       <div><strong>Aplicativo</strong><small>Fechar ou minimizar mantém os widgets ativos. Use a bandeja para abrir ou sair.</small></div>

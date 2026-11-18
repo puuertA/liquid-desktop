@@ -3,12 +3,12 @@ in vec2 position;out vec2 uv;void main(){uv=position*.5+.5;gl_Position=vec4(posi
 export const fragment=`#version 300 es
 precision highp float;
 in vec2 uv;out vec4 color;
-uniform vec2 size;uniform vec4 shapes[5];uniform int count;uniform sampler2D backdrop;uniform bool textured;
+uniform vec2 size;uniform vec4 shapes[5];uniform float radii[5];uniform float topRadii[5];uniform int count;uniform sampler2D backdrop;uniform bool textured;
 uniform vec3 tint;uniform float opacity,shade,shine,strength,dispersion,bezel,thickness,peak,frost;
-float field(vec2 p){float d=100000.;for(int i=0;i<5;i++){if(i>=count)break;vec4 r=shapes[i];vec2 q=abs(p-r.xy-r.zw*.5)-(r.zw*.5-32.);float n=length(max(q,0.))+min(max(q.x,q.y),0.)-32.;float h=max(1.-abs(d-n)/48.,0.);d=min(d,n)-h*h*12.;}return d;}
+float field(vec2 p){float d=100000.;for(int i=0;i<5;i++){if(i>=count)break;vec4 r=shapes[i];float radius=min(p.y<r.y+r.w*.5?topRadii[i]:radii[i],min(r.z,r.w)*.5);vec2 q=abs(p-r.xy-r.zw*.5)-(r.zw*.5-radius);float n=length(max(q,0.))+min(max(q.x,q.y),0.)-radius;float h=max(1.-abs(d-n)/48.,0.);d=min(d,n)-h*h*12.;}return d;}
 vec3 sampleBackground(vec2 p){vec2 v=clamp(p/size,0.,1.);vec2 b=vec2(frost)/size;return texture(backdrop,v).rgb*.5+(texture(backdrop,v+b).rgb+texture(backdrop,v-b).rgb)*.25;}
 void main(){
- vec2 p=vec2(uv.x,1.-uv.y)*size;float d=field(p);float alpha=1.-smoothstep(-.7,.7,d);if(alpha<=0.){color=vec4(0);return;}
+ vec2 p=vec2(uv.x,1.-uv.y)*size;float d=field(p);float aa=max(fwidth(d),.001);float alpha=1.-smoothstep(-aa,aa,d);if(alpha<=0.){color=vec4(0);return;}
  vec2 grad=vec2(field(p+vec2(.7,0))-field(p-vec2(.7,0)),field(p+vec2(0,.7))-field(p-vec2(0,.7)));
  vec2 normal=grad/max(length(grad),.0001);float s=clamp(-d/bezel,.001,.999);
  float arc=sqrt(s*(2.-s)),slope=thickness/bezel*(1.-s)/arc,ci=inversesqrt(1.+slope*slope),si=slope*ci;

@@ -1,4 +1,11 @@
-# Liquid Desktop 0.7.0
+# Liquid Desktop 0.7.1
+## Nitidez, barra e ilha — 0.7.1
+
+O vidro unido agora acompanha a resolução física do monitor; Alta acrescenta supersampling de 1,5×, limitado pela GPU. Removido o limite de textura de 2048 px; a borda usa antialiasing derivado do pixel e o recorte nativo usa linhas de um pixel. Mapas dos widgets individuais também acompanham DPI (até 2×).
+
+A Top Bar usa o shader óptico com cor e intensidade configuráveis. Na ilha, selecione **Aparência → Liquid Glass** (ou Adaptive), tanto no formato flutuante quanto notch. O vidro acompanha a expansão e mantém o texto fora do efeito. Black e Graphite continuam disponíveis.
+
+Barra e ilha têm a opção **Refratar wallpaper estático**, desligada por padrão. Ligada, amostra a imagem de fundo do Windows nas coordenadas da superfície; desligada, mantém transparência e reflexos sobre Wallpaper Engine e aplicativos. Não refrata vídeo nem o conteúdo das outras janelas. A reserva de espaço e o recorte central da barra permanecem iguais.
 ## Vidro líquido e widgets unidos — 0.7.0
 
 No painel, selecione um widget e clique em **Widgets unidos → Usar vidro líquido de…**. O grupo usa esse widget como fonte de cor e material. Ative **Permitir arrastar** em cada widget: ao aproximá-los, as bordas formam uma lente contínua, com reflexos e dispersão RGB. As posições do grupo são salvas separadamente; desativar a união restaura as janelas nas posições individuais anteriores. Notas e configurações são preservadas. Um monitor por grupo nesta versão.
@@ -71,7 +78,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.7.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.7.1_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 
