@@ -1,0 +1,4 @@
+import type {Layout,Settings} from '../types';
+import {widgetIds} from '../types';
+const widget:Settings={x:60,y:90,width:360,height:220,enabled:true,refraction:18,opacity:.12,edit:true,static_wallpaper:true,tint:'#b9d5e8',shine:.65,shade:.42,show_seconds:false,hour24:true,note:'',material:'regular',thickness:18,bezel:26,dispersion:.1,frost:.35,quality:'balanced',motion:true};
+export const previewLayout:Layout={version:1,glass_source:'clock',sync_theme:true,widgets:Object.fromEntries(widgetIds.map((id,i)=>[id,{...widget,enabled:i<4}])) as Layout['widgets'],island:{static_wallpaper:true,enabled:true,form:'floating',appearance:'liquid',above_apps:true,monitor:0,motion:true},topbar:{static_wallpaper:true,enabled:true,monitor:0,tint:'#b9d5e8',opacity:.12,above_apps:true,hide_fullscreen:true,show_seconds:false,show_date:true,show_cpu:true,show_memory:true,show_network:true,show_volume:true},fusion:{enabled:false,monitor:0,source:'clock',positions:{}}};

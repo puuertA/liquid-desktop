@@ -49,3 +49,18 @@ Sem neon, brilho intenso, gradiente em texto, sombras pesadas, fundo falso de ma
 ## Ajustes 0.1.3
 
 Cor do material configurável (#RRGGBB), reflexos 0–100%, contraste 20–75%. A camada fixa de 62% foi substituída por uma camada radial ajustável (padrão 42%); a razão de contraste histórica não se aplica a todos os ajustes. Texto branco mantém sombra curta para separar o conteúdo do fundo. A borda usa um anel mascarado de 1,5 px, um reflexo interno a 5 px do contorno e um brilho inferior tingido pela cor escolhida. A iluminação segue o cursor, sem animação contínua em repouso. No modo desktop não mostrar instruções de edição. Refração de vídeo continua fora do escopo.
+
+## Painel 0.9.0 — Unslop
+
+Direção (baseada no Liquid Desktop):
+- Produto: controla widgets, barra, ilha e material óptico no desktop Windows.
+- Caráter: sereno, preciso, tátil.
+- Mundo: instrumentos de superfície sobre um ambiente mineral claro.
+- Momentos: a prévia refratada pelo renderizador real; o estado do desktop no início.
+- Assinatura: linha verde curta na seleção da navegação, refletindo a borda da lente.
+
+Auditoria: página única longa com funções concorrentes; editor óptico enterrado no inspetor do widget; área horizontal subutilizada; controles e descrições repetidos; metadados de 10–11 px em excesso; cartões demais no gerenciador. A nova navegação distribui por tarefa, preserva os comandos e mantém o efeito óptico nas prévias. Tokens de cor, espaço, borda, foco e movimento ficam em `src/panel/redesign.css`. O primeiro estado do painel mostra dados vindos de `get_layout`; a prévia de teste usa o mesmo renderizador óptico do produto. Layout de demonstração só aparece no Vite com `?preview-panel=1`.
+
+Revisão final Unslop: superfícies administrativas discretas, textos alinhados e sem emojis como ícones; seleção com uma linha verde; maior parte dos controles em grupos e divisores; foco visível e `prefers-reduced-motion`. Inspeção visual automatizada não esteve disponível: o pipe nativo falhou e o Edge headless rejeitou a captura nesta sessão. Revisão manual do instalador ainda é recomendada.
+
+Processo de redesign guiado pela skill Unslop de Damir Sokolovsky, CC BY 4.0: https://heydamir.design/unslop

@@ -1,4 +1,8 @@
-# Liquid Desktop 0.8.1
+# Liquid Desktop 0.9.0
+## Painel redesenhado — 0.9.0
+
+O painel agora usa navegação lateral para Visão geral, Widgets, Dynamic Island, Top Bar, Materiais, Aparência e Aplicativo. A tela de widgets mantém todas as configurações e mostra uma prévia contextual. O Material Studio separa presets, prévia com o renderer óptico real e controles por função. A aparência do painel usa neutros minerais e verde discreto; o vidro permanece concentrado nas prévias e no desktop. Preferências e comandos nativos permanecem compatíveis.
+
 ## Correções do vidro animado — 0.8.1
 
 A composição da cor e da transparência agora é idêntica entre pixels capturados e áreas mascaradas, eliminando a emenda retangular de cor. Barra e ilha usam uma lente proporcional à altura, preservando o centro transparente e a refração nas bordas. Encerre a versão anterior pela bandeja antes de instalar: uma sessão antiga de captura mantém seu indicador amarelo até ser encerrada.
@@ -93,7 +97,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.8.1_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.9.0_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

@@ -12,6 +12,7 @@ import {FusionLab} from './fusion/FusionLab';
 import './style.css';
 import './widgets/widgets.css';
 import './panel/panel.css';
+import './panel/redesign.css';
 const selected = new URLSearchParams(location.search).get('widget');
 const id = widgetIds.includes(selected as WidgetId) ? selected as WidgetId : null;
 const island=new URLSearchParams(location.search).get('surface')==='island';
