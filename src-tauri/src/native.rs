@@ -463,6 +463,27 @@ mod tests {
         }
     }
     #[test]
+    #[ignore = "Briefly shows a small non-activating color fixture to verify live capture; restores it with RAII"]
+    fn live_capture_tracks_controlled_motion(){unsafe{
+        #[link(name="user32")]unsafe extern "system"{fn GetDC(hwnd:Hwnd)->Hwnd;fn ReleaseDC(hwnd:Hwnd,dc:Hwnd)->i32;fn FillRect(dc:Hwnd,rect:*const Rect,brush:Hwnd)->i32;fn ShowWindow(hwnd:Hwnd,command:i32)->i32;}
+        #[link(name="gdi32")]unsafe extern "system"{fn CreateSolidBrush(color:u32)->Hwnd;}
+        let null=std::ptr::null_mut();let h=CreateWindowExW(0x08000088,wide("STATIC").as_ptr(),wide("Liquid capture validation").as_ptr(),0x80000000,40,80,120,80,null,null,null,null);assert!(!h.is_null());let _window=TestWindow(h);
+        crate::live_wallpaper::TEST_FIXTURE.store(h as isize,std::sync::atomic::Ordering::Relaxed);
+        struct Reset;impl Drop for Reset{fn drop(&mut self){crate::live_wallpaper::TEST_FIXTURE.store(0,std::sync::atomic::Ordering::Relaxed);}}let _reset=Reset;
+        ShowWindow(h,4);
+        let paint=|color:u32|{let dc=GetDC(h);let brush=CreateSolidBrush(color);let r=Rect{left:0,top:0,right:120,bottom:80};FillRect(dc,&r,brush);DeleteObject(brush);ReleaseDC(h,dc);};
+        let sample=|expected:[u8;3]|{for _ in 0..40{paint(u32::from(expected[0])|(u32::from(expected[1])<<8)|(u32::from(expected[2])<<16));std::thread::sleep(std::time::Duration::from_millis(100));if let Ok(frame)=crate::live_wallpaper::test_frame([60,100,20,20]){if frame[20..].chunks_exact(4).any(|p|p[3]==255&&p[..3].iter().zip(expected).all(|(a,b)|a.abs_diff(b)<8)){return true}}}false};
+        assert!(sample([230,40,30]),"First live color was not captured");assert!(sample([30,190,90]),"Changed live color was not captured");println!("Live capture observed both controlled colors through the production broker");
+    }}
+    #[test]
+    #[ignore = "Creates a hidden widget HWND and verifies capture exclusion and restoration"]
+    fn live_capture_exclusion_roundtrips(){unsafe{
+        let null=std::ptr::null_mut();let h=CreateWindowExW(0x80,wide("STATIC").as_ptr(),wide("Liquid capture test").as_ptr(),0x80000000,0,0,200,180,null,null,null,null);assert!(!h.is_null());let _window=TestWindow(h);
+        configure_desktop_window(h as isize).unwrap();
+        crate::live_wallpaper::set_excluded(h as isize,true).unwrap();
+        crate::live_wallpaper::set_excluded(h as isize,false).unwrap();
+    }}
+    #[test]
     #[ignore = "Creates a hidden HWND and verifies the scanline mask leaves empty gaps clickable"]
     fn scanline_mask_preserves_empty_gaps(){unsafe{
         let null=std::ptr::null_mut();let h=CreateWindowExW(0x80,wide("STATIC").as_ptr(),wide("Liquid mask test").as_ptr(),0x80000000,0,0,120,80,null,null,null,null);assert!(!h.is_null());let _window=TestWindow(h);

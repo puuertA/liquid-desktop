@@ -38,7 +38,7 @@ export function Panel() {
   async function toggle(id:WidgetId){if(!layout)return;setBusy(id);setError('');try{await queue.current;await invoke(layout.widgets[id].enabled?'remove_widget':'create_widget',{id});await reload()}catch(e){setError(String(e))}finally{setBusy(null)}}
   async function applicationAction(action:()=>Promise<unknown>){setAppBusy(true);try{await queue.current;await action();setError('')}catch(e){setError(String(e))}finally{setAppBusy(false)}}
   const settings=layout?.widgets[selected],meta=catalog[selected];
-  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.7.1</span></header>
+  return <main className="library-panel"><header><div className="brandmark">◌</div><div><p className="eyebrow">Liquid Desktop</p><h1>Seu espaço, do seu jeito.</h1><p className="intro">Widgets independentes. Um mesmo material.</p></div><span className="phase">v0.8.0</span></header>
     {error&&<div className="error" role="alert">{error}<button className="dismiss-error" aria-label="Fechar aviso" onClick={()=>setError('')}>×</button></div>}
     <section className="app-options" aria-label="Configurações gerais">
       <div><strong>Aplicativo</strong><small>Fechar ou minimizar mantém os widgets ativos. Use a bandeja para abrir ou sair.</small></div>
@@ -64,8 +64,8 @@ export function Panel() {
         <section className="inspector-section"><h3>Material</h3>
           <MaterialPreview settings={settings}/>
           <div className="material-presets">{Object.entries(materials).map(([id,material])=><button key={id} aria-pressed={settings.material===id} title={material.description} onClick={()=>patch(materialPatch(id as keyof typeof materials))}><strong>{material.name}</strong><small>{material.description}</small></button>)}</div>
-          <label className="toggle"><input type="checkbox" checked={layout?.sync_theme??false} disabled={appBusy||saving} onChange={e=>{const enabled=e.target.checked;void applicationAction(()=>invoke('set_theme_sync',{id:selected,enabled}))}}/> Sincronizar tema de todos os widgets</label>
-          <p className="mode-help">Ao ativar, o material deste widget vale para todos, inclusive os ocultos. Depois, qualquer mudança de cor ou efeito será compartilhada.</p>
+          <label className="toggle"><input type="checkbox" checked={layout?.sync_theme??false} disabled={appBusy||saving} onChange={e=>{const enabled=e.target.checked;void applicationAction(()=>invoke('set_theme_sync',{id:selected,enabled}))}}/> Sincronizar vidro dos widgets, barra e ilha</label>
+          <p className="mode-help">Ao ativar, todos usam este material. Barra e ilha seguem o último material ajustado; posições e conteúdo continuam individuais.</p>
           <div className="theme-presets">{[
             {name:'Cristal',tint:'#b9d5e8',opacity:.12,shine:.65,shade:.42},
             {name:'Grafite',tint:'#627080',opacity:.18,shine:.45,shade:.65},
@@ -80,9 +80,9 @@ export function Panel() {
           <label className="quality-control">Qualidade óptica<select value={settings.quality} onChange={e=>patch({quality:e.target.value as Settings['quality']})}><option value="economy">Econômica · sem dispersão</option><option value="balanced">Equilibrada</option><option value="high">Alta</option></select></label>
           <label className="toggle"><input type="checkbox" checked={settings.motion} onChange={e=>patch({motion:e.target.checked})}/> Resposta elástica ao toque</label>
           <label className="toggle wallpaper-mode"><input type="checkbox" checked={!settings.static_wallpaper} onChange={e=>patch({static_wallpaper:!e.target.checked})}/> Fundo animado / Wallpaper Engine</label>
-          <Range label="Refração estática" value={settings.refraction} max={40} step={1} suffix=" px" disabled={!settings.static_wallpaper} onChange={refraction=>patch({refraction})}/>
-          <p className="mode-help">{settings.static_wallpaper?'A lente usa a imagem estática configurada no Windows.':'Transparência sobre o fundo animado, sem copiar uma imagem antiga.'}</p>
-          {settings.material==='adaptive'&&<p className="mode-help">{settings.static_wallpaper?'O contraste acompanha a luminosidade da região atrás deste widget.':'Adaptive conserva o contraste manual: o vídeo do Wallpaper Engine não é capturado.'}</p>}
+          <Range label="Refração" value={settings.refraction} max={40} step={1} suffix=" px"  onChange={refraction=>patch({refraction})}/>
+          <p className="mode-help">{settings.static_wallpaper?'A lente usa a imagem estática configurada no Windows.':'Refração dos frames do Wallpaper Engine em tempo real. Os recortes ficam em memória; áreas de aplicativos são mascaradas.'}</p>
+          {settings.material==='adaptive'&&<p className="mode-help">{settings.static_wallpaper?'O contraste acompanha a luminosidade da região atrás deste widget.':'No fundo animado, ajuste Contraste para manter o texto legível.'}</p>}
         </section><footer className="inspector-footer"><span className="status-dot"/>{saving?'Salvando…':'Preferências salvas neste computador'}</footer>
       </>}
     </section></div>

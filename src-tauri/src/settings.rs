@@ -117,6 +117,8 @@ pub fn valid_id(id: &str) -> Result<(), String> {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Layout {
     pub version: u32,
+    #[serde(default = "default_glass_source")]
+    pub glass_source: String,
     #[serde(default)]
     pub sync_theme: bool,
     #[serde(default)]
@@ -127,6 +129,7 @@ pub struct Layout {
     pub fusion: crate::fusion::Config,
     pub widgets: std::collections::BTreeMap<String, Settings>,
 }
+fn default_glass_source()->String {"clock".into()}
 impl Default for Layout {
     fn default() -> Self {
         let mut widgets = std::collections::BTreeMap::new();
@@ -158,7 +161,8 @@ impl Default for Layout {
         }
         Self {
             version: 2,
-            sync_theme: false,
+            glass_source: default_glass_source(),
+            sync_theme: true,
             island: crate::island::Config::default(),
             topbar: crate::topbar::Config::default(),
             fusion: crate::fusion::Config::default(),
@@ -169,6 +173,7 @@ impl Default for Layout {
 impl Layout {
     pub fn sync_material(&mut self, source: &str) -> Result<(), String> {
         valid_id(source)?;
+        self.glass_source=source.into();
         let material = self.widgets[source].clone();
         for widget in self.widgets.values_mut() {
             widget.tint = material.tint.clone();
@@ -191,11 +196,15 @@ impl Layout {
         let value: serde_json::Value = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
         let mut layout = Self::default();
         if value.get("widgets").is_some() {
+            let shared_material=value.get("glass_source").is_some();
             let saved: Self = serde_json::from_value(value).map_err(|e| e.to_string())?;
+            let legacy_source=saved.widgets.iter().find(|(_,s)|s.enabled).or_else(||saved.widgets.iter().next()).map(|(id,_)|id.clone()).unwrap_or_else(default_glass_source);
             if saved.version != 2 {
                 return Err("Versão de layout não suportada".into());
             }
             layout.sync_theme = saved.sync_theme;
+            valid_id(&saved.glass_source)?;
+            layout.glass_source=saved.glass_source;
             saved.island.validate()?;
             layout.island = saved.island;
             saved.topbar.validate()?;
@@ -206,6 +215,11 @@ impl Layout {
                 valid_id(&id)?;
                 settings.validate()?;
                 layout.widgets.insert(id, settings);
+            }
+            if !shared_material {
+                // First shared-material migration keeps an active widget's existing glass.
+                layout.sync_theme=true;
+                layout.sync_material(&legacy_source)?;
             }
         } else {
             let mut clock: Settings = serde_json::from_value(value).map_err(|e| e.to_string())?;
@@ -220,6 +234,14 @@ impl Layout {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_glass_migration_uses_active_material_and_preserves_widget_content(){
+        let layout=Layout::load(br##"{"version":2,"widgets":{"analog":{"enabled":true,"tint":"#112233","static_wallpaper":false,"dispersion":0.4},"notes":{"x":540,"width":420,"note":"keep"}}}"##).unwrap();
+        assert!(layout.sync_theme);assert_eq!(layout.glass_source,"analog");
+        for s in layout.widgets.values(){assert_eq!(s.tint,"#112233");assert_eq!(s.dispersion,0.4);assert!(!s.static_wallpaper)}
+        assert_eq!(layout.widgets["notes"].note,"keep");assert_eq!(layout.widgets["notes"].x,540);assert_eq!(layout.widgets["notes"].width,420);
+        let saved=Layout::load(&serde_json::to_vec(&layout).unwrap()).unwrap();assert_eq!(saved.glass_source,"analog");
+    }
     #[test]
     fn optical_upgrade_preserves_legacy_values_and_rejects_invalid_settings() {
         let layout=Layout::load(br##"{"version":2,"sync_theme":true,"widgets":{"notes":{"note":"Keep me","tint":"#ff8800","refraction":7,"opacity":0.3,"width":410}}}"##).unwrap();
@@ -271,7 +293,7 @@ mod tests {
             )
         );
         assert!(
-            !Layout::load(br#"{"version":2,"widgets":{}}"#)
+            Layout::load(br#"{"version":2,"widgets":{}}"#)
                 .unwrap()
                 .sync_theme
         );

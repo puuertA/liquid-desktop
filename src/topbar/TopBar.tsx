@@ -38,7 +38,7 @@ export function TopBar(){
   const time=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',...(c.show_seconds?{second:'2-digit'}:{})});
   const status=error||snapshot.volume_error;
   return <div className="topbar" data-shared={shared} data-optical={true} style={{'--bar-tint':tintColor(c.tint,c.opacity),'--bar-gap':shared?'480px':'0px'} as CSSProperties}>
-    <SurfaceGlass selector={shared?'.bar-segment':'.topbar'} staticWallpaper={c.static_wallpaper} tint={c.tint} opacity={c.opacity*.35} onError={report}/><div className="bar-segment bar-left"><div className="bar-items">
+    <SurfaceGlass selector={shared?'.bar-segment':'.topbar'} onError={report}/><div className="bar-segment bar-left"><div className="bar-items">
       <button className="bar-launcher" onClick={open} title="Abrir painel Liquid Desktop" aria-label="Abrir painel Liquid Desktop"><Icon/><span>Liquid Desktop</span></button>
       <time dateTime={now.toISOString()} title={now.toLocaleString('pt-BR')}><span className="bar-date">{c.show_date&&now.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'})}</span><strong>{time}</strong></time>
     </div></div>

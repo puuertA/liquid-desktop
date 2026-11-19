@@ -47,3 +47,7 @@ Launcher com atalho, teclado, aplicativos e busca de arquivos somente em locais 
 ## 6. Validação contínua e distribuição
 
 Repetir testes relevantes em cada fase. Benchmark CPU/GPU/RAM do processo e descendentes WebView2 em repouso, arraste, mídia e animação. Matriz Windows 10/11, Win+D, Alt+Tab, fullscreen, DPI misto, mudanças de monitor, bloqueio/desbloqueio e Explorer reiniciado. Installer e documentação devem distinguir resultados medidos, inspeção visual e pendências. A meta de 60 FPS ainda não está comprovada.
+
+## Incremento 0.8.0 — refração animada
+
+Implementado e testado no Windows 10: frames WGC em memória, fallback do monitor com máscara de aplicativos quando WPE/WorkerW rejeitam captura direta, exclusão das próprias superfícies, shader comum e tema compartilhado entre widgets/barra/ilha. O teste real detectou mudança dos frames do Wallpaper Engine depois que o usuário deixou o wallpaper reproduzindo. Pendente: validação visual completa no WebView2, benchmark em uso, HDR/múltiplas GPUs e refinamento da cadência. A máscara não reconstrói wallpaper oculto; essas áreas usam translucidez. A exclusão também afeta ferramentas externas de screenshot/gravação compatíveis com display affinity.

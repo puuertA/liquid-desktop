@@ -3,12 +3,16 @@ import {getCurrentWindow} from '@tauri-apps/api/window';
 import {FusionGlass} from '../fusion/FusionGlass';
 import type {FusionSnapshot,Shape} from '../fusion/types';
 import type {Settings,WidgetId} from '../types';
-import {materials} from './materials';
+import {invoke} from '@tauri-apps/api/core';
+import {listen} from '@tauri-apps/api/event';
 import './surface.css';
 
 // One canvas per native surface. Resizing the island updates geometry only;
 // the wallpaper crop remains anchored to the native window, not its animated card.
-export function SurfaceGlass({selector,staticWallpaper,tint='#23333f',opacity=.1,onError}:{selector:string;staticWallpaper:boolean;tint?:string;opacity?:number;onError:(message:string)=>void}){
+export function SurfaceGlass({selector,material,onError}:{selector:string;material?:Settings;onError:(message:string)=>void}){
+  const [shared,setShared]=useState<Settings|null>(null);
+  useEffect(()=>{if(material)return;let disposed=false;const off=listen<Settings>('surface-material',e=>setShared(e.payload));void invoke<Settings>('surface_material').then(s=>{if(!disposed)setShared(s)}).catch(e=>onError(String(e)));return()=>{disposed=true;void off.then(f=>f())}},[material,onError]);
+  const source=material??shared;
   const [geometry,setGeometry]=useState<{shapes:Shape[];screen:[number,number,number,number];scale:number;width:number;height:number}|null>(null);
   useEffect(()=>{
     let disposed=false,frame=0,position={x:0,y:0},scale=devicePixelRatio,located=false;
@@ -27,9 +31,9 @@ export function SurfaceGlass({selector,staticWallpaper,tint='#23333f',opacity=.1
     return()=>{disposed=true;cancelAnimationFrame(frame);observer.disconnect();mutation.disconnect();window.removeEventListener('resize',schedule);for(const off of [moved,dpi])void off.then(f=>f()).catch(()=>{})};
   },[selector,onError]);
   const snapshot=useMemo<FusionSnapshot|null>(()=>{
-    if(!geometry)return null;
-    const settings:Settings={...materials.liquid,x:0,y:0,width:geometry.width,height:geometry.height,enabled:true,edit:false,static_wallpaper:staticWallpaper,tint,opacity,shade:staticWallpaper?.3:.22,show_seconds:false,hour24:true,note:'',material:'liquid',quality:'balanced',motion:false,bezel:12,thickness:16,refraction:12,dispersion:.4};
+    if(!geometry||!source)return null;
+    const settings:Settings={...source,width:geometry.width,height:geometry.height};
     return {...geometry,config:{enabled:true,monitor:0,source:'clock',positions:{}},widgets:Object.fromEntries(['clock','analog','notes','calendar','system'].map(id=>[id,settings])) as Record<WidgetId,Settings>};
-  },[geometry,staticWallpaper,tint,opacity]);
+  },[geometry,source]);
   return <div className="surface-optics" aria-hidden="true">{snapshot&&<FusionGlass snapshot={snapshot} shapes={snapshot.shapes} onError={onError}/>}</div>;
 }

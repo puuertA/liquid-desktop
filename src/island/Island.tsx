@@ -42,7 +42,7 @@ export function Island(){
   useEffect(()=>{const blur=()=>{setFocused(false);setHover(false)};const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape'){setPinned(false);blur();(document.activeElement as HTMLElement)?.blur()}};window.addEventListener('keydown',onKey);window.addEventListener('blur',blur);return()=>{window.removeEventListener('keydown',onKey);window.removeEventListener('blur',blur)}},[]);
   async function action(run:()=>Promise<unknown>,message?:string){setBusy(true);try{await run();setError('');if(message)notify(message);await refresh()}catch(e){setError(String(e))}finally{setBusy(false)}}
   const media=(command:string,position?:number)=>track&&action(()=>invoke('island_media_action',{id:track.id,action:command,position:position??null}));
-  return <div className="island-host">{(config.appearance==='liquid'||config.appearance==='adaptive')&&<SurfaceGlass selector=".island" staticWallpaper={config.static_wallpaper} onError={report}/>}<div ref={root} className={`island appearance-${config.appearance} state-${state}`} data-motion={config.motion} data-ready={ready} tabIndex={0} role="region" aria-label="Dynamic Island"
+  return <div className="island-host">{(config.appearance==='liquid'||config.appearance==='adaptive')&&<SurfaceGlass selector=".island" onError={report}/>}<div ref={root} className={`island appearance-${config.appearance} state-${state}`} data-motion={config.motion} data-ready={ready} tabIndex={0} role="region" aria-label="Dynamic Island"
     onPointerEnter={()=>{if(collapse.current)clearTimeout(collapse.current);setHover(true)}}
     onPointerLeave={()=>{collapse.current=setTimeout(()=>setHover(false),180)}}
     onFocus={()=>setFocused(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setFocused(false)}}

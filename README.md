@@ -1,16 +1,27 @@
-# Liquid Desktop 0.7.1
+# Liquid Desktop 0.8.0
+## Refração animada e material compartilhado — 0.8.0
+
+Ative **Fundo animado / Wallpaper Engine** em Material. Os frames capturados alimentam a mesma lente WebGL2 usada no modo estático: refração, dispersão RGB, difusão e reflexos. Widgets individuais, widgets unidos, Top Bar e ilha Liquid/Adaptive agora usam esse mesmo renderizador e os mesmos parâmetros. Barra e ilha não têm mais uma cor cinza independente.
+
+Na primeira migração, o material de um widget ativo é compartilhado com os demais; posições, tamanhos e notas permanecem individuais. A configuração anterior é copiada para `settings-before-live-glass.json` antes da primeira gravação. **Sincronizar vidro dos widgets, barra e ilha** mantém o conjunto sincronizado. Desativar permite materiais individuais; a barra/ilha seguem o último material ajustado. Black e Graphite da ilha continuam sendo alternativas opacas.
+
+A captura tenta primeiro a janela do Wallpaper Engine. Neste Windows 10, essa janela e seu host rejeitaram captura direta; a alternativa validada usa Windows Graphics Capture do monitor. As imagens permanecem em memória, e os recortes enviados ao renderer têm as áreas dos aplicativos mascaradas. Onde outro aplicativo cobre o fundo, o vidro volta à translucidez: não reconstrói wallpaper oculto. A máscara é conservadora e pode cobrir margens/sombras de janelas.
+
+As próprias janelas do Liquid Desktop são excluídas da captura para evitar recursão. **Enquanto o modo animado estiver ativo, elas também podem não aparecer em screenshots/gravações que respeitam essa exclusão do Windows.** Ao desligar todas as superfícies animadas, a exclusão é removida. O Windows pode mostrar seu indicador de captura. Nada é enviado pela rede nem gravado em vídeo.
+
+O fundo precisa continuar reproduzindo no Wallpaper Engine; regras de pausa ao abrir outro app também pausam o efeito. A cadência solicitada é de até 30 atualizações/s (10 no Econômico), sem promessa de FPS medido. A captura é compartilhada por monitor e encerra sessões sem consumidores após dois segundos. Perda de dispositivo/Wallpaper Engine é sinalizada e há nova tentativa.
 ## Nitidez, barra e ilha — 0.7.1
 
 O vidro unido agora acompanha a resolução física do monitor; Alta acrescenta supersampling de 1,5×, limitado pela GPU. Removido o limite de textura de 2048 px; a borda usa antialiasing derivado do pixel e o recorte nativo usa linhas de um pixel. Mapas dos widgets individuais também acompanham DPI (até 2×).
 
 A Top Bar usa o shader óptico com cor e intensidade configuráveis. Na ilha, selecione **Aparência → Liquid Glass** (ou Adaptive), tanto no formato flutuante quanto notch. O vidro acompanha a expansão e mantém o texto fora do efeito. Black e Graphite continuam disponíveis.
 
-Barra e ilha têm a opção **Refratar wallpaper estático**, desligada por padrão. Ligada, amostra a imagem de fundo do Windows nas coordenadas da superfície; desligada, mantém transparência e reflexos sobre Wallpaper Engine e aplicativos. Não refrata vídeo nem o conteúdo das outras janelas. A reserva de espaço e o recorte central da barra permanecem iguais.
+A fonte do fundo agora é compartilhada pelo painel Material. A reserva de espaço e o recorte central da barra permanecem iguais.
 ## Vidro líquido e widgets unidos — 0.7.0
 
 No painel, selecione um widget e clique em **Widgets unidos → Usar vidro líquido de…**. O grupo usa esse widget como fonte de cor e material. Ative **Permitir arrastar** em cada widget: ao aproximá-los, as bordas formam uma lente contínua, com reflexos e dispersão RGB. As posições do grupo são salvas separadamente; desativar a união restaura as janelas nas posições individuais anteriores. Notas e configurações são preservadas. Um monitor por grupo nesta versão.
 
-Para refração real, desative **Fundo animado** no widget fonte: o shader distorce a textura do wallpaper estático, mantendo o texto nítido. Com Wallpaper Engine, há união e translucidez, mas não refração do vídeo. Não há captura de outras janelas nem Acrylic. A qualidade controla a resolução da superfície; o consumo de GPU ainda precisa ser medido no desktop.
+O modo unido refrata tanto o wallpaper estático quanto os frames animados disponíveis. O texto permanece fora do shader. Não usa Acrylic. A qualidade controla a resolução da superfície; o consumo total de GPU ainda precisa ser medido no desktop.
 
 [Prévia do renderizador numa cena de teste](docs/images/fusion-preview.png). A imagem usa uma textura ilustrativa; a versão instalada usa o wallpaper estático do Windows.
 
@@ -30,11 +41,11 @@ Janelas posicionadas manualmente e aplicativos que ignoram a área útil podem c
 
 No painel, ative **Top Bar**. A barra mostra hora/data, CPU, RAM, download/upload e volume real do Windows. Clique no ícone à esquerda para abrir o painel; o botão de áudio abre o Control Center e o slider ajusta o volume da saída padrão. As métricas compartilham o provedor do widget Sistema, com atualização a cada 2 segundos; leituras indisponíveis aparecem como travessão.
 
-Escolha monitor, cor (confirme em **Aplicar cor**), opacidade, módulos visíveis, segundos, camada acima dos aplicativos e ocultação em tela cheia. Uma barra pode estar ativa neste incremento, com altura de 36 unidades lógicas e margem de 8. Se o monitor salvo desconectar, usa o primeiro disponível.
+Escolha monitor, módulos visíveis, segundos, camada acima dos aplicativos e ocultação em tela cheia. Cor e demais parâmetros do vidro vêm do painel Material. Uma barra pode estar ativa neste incremento, com altura de 36 unidades lógicas e margem de 8. Se o monitor salvo desconectar, usa o primeiro disponível.
 
 Quando a ilha está no mesmo monitor, a barra se divide em dois segmentos e reserva 480 unidades no centro. Esse espaço também é retirado da região nativa da janela, deixando os cliques passarem. Em segmentos estreitos, rede, slider, RAM e outros detalhes se ocultam progressivamente; o painel continua acessível. Monitores com menos de 496 unidades lógicas não comportam a reserva central e os segmentos da barra. Desative a ilha ou use outro monitor nesse caso.
 
-A Top Bar começa desligada ao atualizar a partir de layouts sem barra. Quando ativa, reserva espaço pela AppBar e preserva a barra de tarefas do Windows. O material é translúcido, sem Acrylic. Control Center/flyouts, reordenação de módulos e múltiplas barras simultâneas ficam para próximos incrementos.
+A Top Bar começa desligada ao atualizar a partir de layouts sem barra. Quando ativa, reserva espaço pela AppBar e preserva a barra de tarefas do Windows. O material é translúcido, sem Acrylic. Reordenação de módulos e múltiplas barras simultâneas ficam para próximos incrementos.
 
 ## Correção do vidro — 0.5.2
 
@@ -52,7 +63,7 @@ Mídia usa GSMTC: título, artista, capa quando fornecida, seleção de sessão,
 
 O temporizador funciona enquanto o app está aberto, usa relógio monotônico e notifica na própria ilha ao terminar. Não é um alarme persistente: desativar a ilha ou encerrar o aplicativo cancela o temporizador. Mídia e timer podem aparecer simultaneamente. Aviso de conclusão tem prioridade sobre aviso de volume por 4,5 segundos.
 
-Liquid/Adaptive usam material translúcido de contraste seguro, sem refração de janelas externas ou adaptação por captura de tela. A ilha ainda não possui fusão entre atividades. Notificações de terceiros, controles de microfone e Dock continuam pendentes. Esses itens continuam no ROADMAP.
+Liquid/Adaptive usam o mesmo material óptico dos widgets, com as limitações de captura descritas acima. A ilha ainda não possui fusão entre atividades. Notificações de terceiros, controles de microfone e Dock continuam pendentes. Esses itens continuam no ROADMAP.
 
 O plano [Next Generation](ROADMAP.md) começou pelo motor óptico da 0.4.0. Os cinco widgets, bandeja, temas sincronizados e inicialização opcional continuam disponíveis.
 
@@ -60,9 +71,9 @@ O plano [Next Generation](ROADMAP.md) começou pelo motor óptico da 0.4.0. Os c
 
 No painel, selecione um widget e escolha **Liquid Prism**, **Clear**, **Thin**, **Regular**, **Frosted**, **Dark** ou **Adaptive**. A prévia é um estúdio com textura ilustrativa, processada pelo mesmo renderer usado no desktop. Cor e material continuam podendo ser sincronizados entre widgets.
 
-Novos ajustes: espessura óptica, largura da borda convexa, dispersão cromática, difusão da textura e qualidade. O centro da lente permanece neutro e a refração se concentra na borda. O material Adaptive mede a luminosidade da textura estática local para aumentar o contraste; com Wallpaper Engine utiliza o contraste manual. Nenhuma imagem de outras janelas ou vídeo do Wallpaper Engine é capturada.
+Novos ajustes: espessura óptica, largura da borda convexa, dispersão cromática, difusão da textura e qualidade. O centro da lente permanece neutro e a refração se concentra na borda. O contraste configurado é compartilhado entre superfícies; o conteúdo fica fora da refração. O modo animado usa captura em memória conforme descrito acima.
 
-Modo Econômico reduz a resolução do mapa e usa uma passagem sem dispersão. Equilibrado usa mapas até 384 px; Alta, até 640 px. A resposta elástica usa uma mola interrompível e respeita movimento reduzido. [Detalhes de movimento](docs/MOTION.md). Preferências 0.3.0 são carregadas como material Personalizado, sem substituir cores, posições, notas ou valores anteriores.
+Econômico desliga a dispersão e reduz a cadência de captura. Equilibrado acompanha o DPI físico; Alta acrescenta supersampling de 1,5×, limitado pela GPU. A resposta elástica usa uma mola interrompível e respeita movimento reduzido. [Detalhes de movimento](docs/MOTION.md). Preferências 0.3.0 são carregadas como material Personalizado, sem substituir cores, posições, notas ou valores anteriores.
 
 A conferência visual no WebView2 permanece pendente por indisponibilidade da automação de interface neste ambiente. Testes e benchmark isolado constam em [validação](docs/VALIDATION.md); não representam uma medição de FPS ou de consumo total do aplicativo.
 
@@ -70,15 +81,15 @@ A conferência visual no WebView2 permanece pendente por indisponibilidade da au
 
 Minimizar ou fechar o painel mantém os widgets ativos na bandeja do sistema. Clique no ícone para reabrir; clique com o botão direito e escolha **Sair do Liquid Desktop** para encerrar. Uma segunda abertura do app reaproveita a instância existente.
 
-Em **Material**, ative **Sincronizar tema de todos os widgets** para aplicar o material selecionado à coleção inteira, inclusive widgets ocultos. Cor, intensidade, reflexos, contraste, refração e modo de wallpaper são compartilhados; posições, tamanhos, notas e opções dos relógios continuam individuais. Desativar a sincronização permite editar cada um novamente. Temas prontos: Cristal, Grafite, Esmeralda e Âmbar.
+Em **Material**, ative **Sincronizar vidro dos widgets, barra e ilha** para aplicar o material selecionado à coleção inteira, inclusive widgets ocultos. Cor, intensidade, reflexos, contraste, refração e modo de wallpaper são compartilhados; posições, tamanhos, notas e opções dos relógios continuam individuais. Desativar a sincronização permite editar cada um novamente. Temas prontos: Cristal, Grafite, Esmeralda e Âmbar.
 
 **Iniciar com o Windows** registra o executável instalado apenas para o usuário atual em HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run. Ao entrar no Windows, restaura os widgets sem abrir o painel. Ative essa opção na versão instalada, não em uma compilação de desenvolvimento. A opção começa desativada e não é ligada pelo instalador. Se bloquear a inicialização no Gerenciador de Tarefas, reative-a também lá. Desative a opção antes de desinstalar para remover a entrada de inicialização.
 
-Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vidro compartilhado. Cada widget é uma janela transparente independente, sem moldura, posicionada acima do desktop e abaixo de aplicativos. Compatível com o modo translúcido usado sobre Wallpaper Engine; não é uma página simulando um desktop.
+Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vidro compartilhado. Cada widget é uma janela transparente independente, sem moldura, posicionada acima do desktop e abaixo de aplicativos. Compatível com a captura do Wallpaper Engine visível no desktop; não é uma página simulando um desktop.
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.7.1_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.8.0_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 
@@ -90,7 +101,7 @@ No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o ca
 | Notas rápidas | Texto simples editável no desktop, salvo localmente; até 8.000 caracteres |
 | Monitor do sistema | CPU, RAM, download e upload reais; gráficos das últimas 30 amostras |
 
-Cada widget tem posição X/Y em pixels físicos, largura e altura em unidades lógicas, cor, intensidade da cor, reflexos, contraste, refração estática e modo de edição próprios. O tamanho pode ser alterado pelo painel (200–640 × 180–600); **Usar tamanho sugerido** restaura uma composição adequada ao tipo.
+Cada widget tem posição X/Y em pixels físicos, largura e altura em unidades lógicas, cor, intensidade da cor, reflexos, contraste, refração e modo de edição próprios. O tamanho pode ser alterado pelo painel (200–640 × 180–600); **Usar tamanho sugerido** restaura uma composição adequada ao tipo.
 
 Ative **Permitir arrastar**. Arraste pelo fundo ou título do widget. Esc cancela; soltar salva a posição. Botões do calendário e a área de texto das notas continuam interativos e não iniciam arraste. A moldura nativa é removida via tratamento Win32 na thread da janela, preservando a correção confirmada na versão 0.1.4.
 

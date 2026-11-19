@@ -10,6 +10,7 @@ mod native;
 mod settings;
 mod startup;
 mod wallpaper;
+mod live_wallpaper;
 use settings::{valid_id, Layout, Settings, IDS};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
@@ -92,6 +93,12 @@ fn persist(app: &tauri::AppHandle, layout: &Layout) -> Result<(), String> {
     let dir = app.path().app_config_dir().map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let target = dir.join("settings.json");
+    if target.exists()&&!dir.join("settings-before-live-glass.json").exists(){
+        let old=std::fs::read(&target).map_err(|e|e.to_string())?;
+        if serde_json::from_slice::<serde_json::Value>(&old).ok().is_some_and(|v|v.get("glass_source").is_none()){
+            std::fs::copy(&target,dir.join("settings-before-live-glass.json")).map_err(|e|e.to_string())?;
+        }
+    }
     if target.exists() && !dir.join("settings-before-widgets.json").exists() {
         std::fs::copy(&target, dir.join("settings-before-widgets.json"))
             .map_err(|e| e.to_string())?;
@@ -106,10 +113,16 @@ fn persist(app: &tauri::AppHandle, layout: &Layout) -> Result<(), String> {
 }
 fn publish(app: &tauri::AppHandle, id: &str, layout: &Layout) -> Result<(), String> {
     let _=app.emit_to("fusion","fusion-refresh",());
+    for surface in ["island","topbar"] {let _=app.emit_to(surface,"surface-material",&layout.widgets[&layout.glass_source]);}
     app.emit_to(id, "settings", &layout.widgets[id])
         .map_err(|e| e.to_string())?;
     app.emit_to("main", "layout", layout)
         .map_err(|e| e.to_string())
+}
+#[tauri::command]
+fn surface_material(app:tauri::AppHandle,window:tauri::WebviewWindow)->Result<Settings,String>{
+    if !["island","topbar"].contains(&window.label()){return Err("Superfície não autorizada".into())}
+    let state=app.state::<State>();let layout=state.layout.lock().unwrap();Ok(layout.widgets[&layout.glass_source].clone())
 }
 #[tauri::command]
 fn get_layout(app: tauri::AppHandle) -> Result<Layout, String> {
@@ -216,6 +229,7 @@ fn update_widget(
     }
     let mut updated = layout.clone();
     updated.widgets.insert(id.clone(), next);
+    if patch.as_object().is_some_and(|fields|fields.keys().any(|key|["tint","opacity","shine","shade","refraction","static_wallpaper","material","thickness","bezel","dispersion","frost","quality"].contains(&key.as_str()))){updated.glass_source=id.clone();}
     if updated.sync_theme {
         updated.sync_material(&id)?;
     }
@@ -609,7 +623,7 @@ fn main() {
                         let _ = native::maintain_desktop_layers(&handles);
                         island::maintain(&task_app);
                         let _=topbar::maintain(&task_app);
-                        let _=fusion::maintain(&task_app);
+                        let _=fusion::maintain(&task_app);live_wallpaper::maintain_affinity(&task_app);
                     })
                     .is_err()
                 {
@@ -661,6 +675,8 @@ fn main() {
             get_layout,
             get_settings,
             get_wallpaper,
+            surface_material,
+            live_wallpaper::live_wallpaper_frame,
             system_snapshot,
             update_widget,
             create_widget,

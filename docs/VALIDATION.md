@@ -202,3 +202,16 @@ Cena do shader real inspecionada em Edge headless/SwiftShader: `images/glass-071
 
 Pendentes: inspeção no desktop do usuário da expansão da ilha, barra com/sem lacuna, DPI misto e comparação do serrilhado relatado. Não há captura ao vivo do Wallpaper Engine. Refração estática nas superfícies é opt-in; áreas acima de aplicativos amostram o wallpaper, não esses aplicativos.
 Build release e NSIS 0.7.1 concluídos. Instalador x64: 2424867 bytes. SHA-256: 435E9C0740EC97963ACC471F53FA263A08CA7F7C24C0F98656B716460B3C61AD.
+
+## 0.8.0 — Wallpaper Engine animado e material compartilhado
+
+- Passaram 30 testes JavaScript e 18 testes Rust padrão. Incluem protocolo RGBA binário, frames truncados/grandes, coordenadas negativas, máscara de aplicativos e migração do tema sem perder notas/geometria. Doze testes nativos permanecem opt-in na suíte padrão.
+- Teste nativo de exclusão/restauração de captura em HWND oculto: passou.
+- Captura direta do renderer WPEVideoWallpaper e do host WorkerW: ambos rejeitados pelo Windows 10 22H2 (E_INVALIDARG). A implementação passou a usar WGC do monitor com máscara de aplicativos nessa situação.
+- Teste controlado com um pequeno retângulo temporário sem ativação: observou duas cores sucessivas pelo broker real; passou. O retângulo foi removido por RAII. A exceção da máscara para o retângulo só existe em cfg(test), nunca no executável distribuído.
+- Primeiro teste com desktop majoritariamente coberto: 39 frames entregues, 20.544 pixels de wallpaper visíveis e sem mudança. O usuário informou que estava vendo vídeo e solicitou nova captura.
+- Nova captura com wallpaper reproduzindo: 7 frames, 1.181.716 pixels de wallpaper visíveis e diferença entre frames; passou. Nenhum frame do desktop foi salvo em disco. Esse teste confirma entrega/mudança dos frames, não FPS ou consumo durante uso prolongado.
+- TypeScript/Vite e Rust release/NSIS passaram. A integração interativa final dentro do WebView2, gravações de terceiros, HDR, múltiplas GPUs e DPI misto continuam pendentes. Não há promessa de 60 FPS.
+
+Roteiro: instalar após sair da versão anterior; verificar sincronização do material entre widgets, barra e ilha Liquid/Adaptive; manter Fundo animado ligado e Wallpaper Engine reproduzindo; testar dispersão/refração e aproximar widgets unidos. Cobrir uma região com outro aplicativo deve fazer o vidro dessa região usar translucidez. Alterar para fundo estático deve manter o alinhamento e remover exclusão de captura quando não houver outra superfície animada. Confirmar que notas e posições foram preservadas e que settings-before-live-glass.json foi criado na primeira gravação da migração.
+Shader final inspecionado em cena ilustrativa no Edge/SwiftShader: images/glass-080.png. Instalador final: 2457376 bytes; SHA-256: 7FF5F579455EE33155561EB858A1FCD17634A75D64D19176B470D86657B01C47.

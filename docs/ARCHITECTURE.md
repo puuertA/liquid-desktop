@@ -90,3 +90,13 @@ Validar visualmente widgets e Dynamic Island em múltiplos DPI, medir custo das 
 
 ## 0.7.1 — superfícies ópticas e DPI
 SurfaceGlass reutiliza FusionGlass em uma janela de barra/ilha. ResizeObserver e MutationObserver atualizam a geometria apenas quando ela muda; eventos nativos atualizam posição/DPI. A textura usa o retângulo da janela inteira, evitando recaptura durante cada frame da expansão. Raios superiores e inferiores separados suportam notch; conteúdo HTML permanece independente. Os configs persistem static_wallpaper com default false. O shader aplica fwidth ao contorno, renderiza em DPI físico e mantém textura até o limite da GPU. O recorte de união agora usa scanlines de um pixel físico.
+
+## 0.8.0 — captura animada e um único material
+
+`live_wallpaper.rs` encontra filhos WPE pertencentes a wallpaper32/64.exe dentro do desktop. Um broker MTA atende pedidos limitados por canal, compartilha frames WGC/D3D11 por renderer/monitor, copia staging BGRA com RowPitch e envia apenas recortes RGBA por resposta IPC binária (cabeçalho de 20 bytes). O modo direto tenta o renderer e o host; E_INVALIDARG aciona captura do monitor. A máscara de aplicativos considera janelas visíveis não minimizadas/cloaked, com máscaras anterior, atual e do momento do envio. Pixels mascarados têm RGBA zero; o shader usa translucidez nessas áreas.
+
+A exclusão WDA_EXCLUDEFROMCAPTURE das janelas próprias é confirmada antes de solicitar frames e restaurada quando não há superfícies animadas. Isso afeta também outros capturadores do sistema. A sessão tenta desligar a borda/cursor; versões/permissões do Windows podem manter o indicador. Não há captura persistida em disco nem rede. Recortes são restritos à janela chamadora, labels permitidos e limite de pixels. Sessões ociosas expiram em dois segundos; erros removem a sessão para recriação.
+
+`SurfaceGlass` atende widgets individuais, barra e ilha, e `FusionGlass` atende tanto essas superfícies quanto o grupo. O shader recebe textureRect em coordenadas lógicas, preservando alinhamento e origem negativa. A fonte animada é desacoplada do redesenho/expansão da UI. O IPC tem apenas um pedido pendente por superfície; Econômico solicita 10 Hz, outros modos 30 Hz. Isso é cadência alvo, não resultado de benchmark.
+
+Layout.glass_source e o evento surface-material compartilham cor e propriedades ópticas. A primeira migração escolhe um widget ativo e sincroniza o material, preservando conteúdo/geometria; persist grava um backup anterior à migração. Os controles de material independentes da barra/ilha foram retirados para não divergir dos widgets. O recorte AppBar não foi alterado.

@@ -60,3 +60,7 @@ A captura do usuário demonstrou que limpar os bits de estilo não bastava. Conf
 ## AppBar — 0.6.1
 
 [Microsoft: Application Desktop Toolbars](https://learn.microsoft.com/en-us/windows/win32/shell/application-desktop-toolbars) descreve registro, negociação de posição, callbacks e remoção. Implementação usa ABM_NEW, ABM_QUERYPOS, ABM_SETPOS, ABM_WINDOWPOSCHANGED e ABM_REMOVE; sem SPI_SETWORKAREA.
+
+## Captura — 0.8.0
+
+[Microsoft: CreateForWindow](https://learn.microsoft.com/windows/win32/api/windows.graphics.capture.interop/nf-windows-graphics-capture-interop-igraphicscaptureiteminterop-createforwindow), [CreateFreeThreaded](https://learn.microsoft.com/en-us/uwp/api/windows.graphics.capture.direct3d11captureframepool.createfreethreaded), [acesso à textura D3D](https://learn.microsoft.com/en-us/windows/win32/api/windows.graphics.directx.direct3d11.interop/nf-windows-graphics-directx-direct3d11-interop-idirect3ddxgiinterfaceaccess-getinterface) e [exclusão de captura](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity). No ambiente Windows 10 22H2, a captura direta WPEVideoWallpaper/WorkerW retornou E_INVALIDARG; captura do monitor com máscara foi confirmada em teste nativo. Display affinity não é uma proteção de DRM: a documentação e a implementação não prometem uma fronteira de segurança para conteúdo externo.
