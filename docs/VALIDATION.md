@@ -215,3 +215,12 @@ Build release e NSIS 0.7.1 concluídos. Instalador x64: 2424867 bytes. SHA-256: 
 
 Roteiro: instalar após sair da versão anterior; verificar sincronização do material entre widgets, barra e ilha Liquid/Adaptive; manter Fundo animado ligado e Wallpaper Engine reproduzindo; testar dispersão/refração e aproximar widgets unidos. Cobrir uma região com outro aplicativo deve fazer o vidro dessa região usar translucidez. Alterar para fundo estático deve manter o alinhamento e remover exclusão de captura quando não houver outra superfície animada. Confirmar que notas e posições foram preservadas e que settings-before-live-glass.json foi criado na primeira gravação da migração.
 Shader final inspecionado em cena ilustrativa no Edge/SwiftShader: images/glass-080.png. Instalador final: 2457376 bytes; SHA-256: 7FF5F579455EE33155561EB858A1FCD17634A75D64D19176B470D86657B01C47.
+
+## 0.8.1 — regressões do fundo animado
+
+- 32 testes JS passaram: composição equivalente para fundo capturado/mascarado, incluindo tintas vermelhas saturadas; proporções da lente em barras de 36 px.
+- 19 testes Rust passaram; 12 testes dependentes do desktop ignorados na execução padrão. Rotação, máscara e geometria cobertas.
+- Integração DXGI fora do sandbox passou: captura de duas cores controladas pelo broker real; janela sobreposta excluída da captura preservou o fundo. Janelas temporárias removidas por RAII.
+- Wallpaper Engine real: 3 frames, 14.672 pixels visíveis, movimento detectado comparando RGB somente onde ambos os frames tinham alpha 255. Pixels ficaram em memória, sem imagens salvas. Grande parte do desktop estava coberta por aplicativos.
+- Aparência final no desktop do usuário e ausência visual da borda após encerrar a versão antiga ainda exigem confirmação; os testes não substituem essa inspeção.
+- WebGL2 no Edge/SwiftShader: shader compilou e a emenda capturado/mascarado ficou em 0,475/255. Reprodução: execute `node scripts/check-glass-webgl.mjs` e abra `.tools/check-glass.html`; o resultado esperado é PASS. Teste sintético; não é inspeção visual do desktop.

@@ -473,7 +473,11 @@ mod tests {
         ShowWindow(h,4);
         let paint=|color:u32|{let dc=GetDC(h);let brush=CreateSolidBrush(color);let r=Rect{left:0,top:0,right:120,bottom:80};FillRect(dc,&r,brush);DeleteObject(brush);ReleaseDC(h,dc);};
         let sample=|expected:[u8;3]|{for _ in 0..40{paint(u32::from(expected[0])|(u32::from(expected[1])<<8)|(u32::from(expected[2])<<16));std::thread::sleep(std::time::Duration::from_millis(100));if let Ok(frame)=crate::live_wallpaper::test_frame([60,100,20,20]){if frame[20..].chunks_exact(4).any(|p|p[3]==255&&p[..3].iter().zip(expected).all(|(a,b)|a.abs_diff(b)<8)){return true}}}false};
-        assert!(sample([230,40,30]),"First live color was not captured");assert!(sample([30,190,90]),"Changed live color was not captured");println!("Live capture observed both controlled colors through the production broker");
+        assert!(sample([230,40,30]),"First live color was not captured");
+        let overlay=CreateWindowExW(0x08000088,wide("STATIC").as_ptr(),wide("Excluded glass validation").as_ptr(),0x80000000,40,80,120,80,null,null,null,null);assert!(!overlay.is_null());let _overlay=TestWindow(overlay);
+        crate::live_wallpaper::set_excluded(overlay as isize,true).unwrap();ShowWindow(overlay,4);
+        let dc=GetDC(overlay);let brush=CreateSolidBrush(0x00ff0000);FillRect(dc,&Rect{left:0,top:0,right:120,bottom:80},brush);DeleteObject(brush);ReleaseDC(overlay,dc);
+        assert!(sample([230,40,30]),"Excluded overlay hid the underlying capture");assert!(sample([30,190,90]),"Changed live color was not captured");println!("Live capture observed both controlled colors through the production broker");
     }}
     #[test]
     #[ignore = "Creates a hidden widget HWND and verifies capture exclusion and restoration"]

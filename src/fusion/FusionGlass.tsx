@@ -6,6 +6,7 @@ import {vertex,fragment} from '../glass/fusionShader';
 import {imageRect,union} from '../glass/geometry.mjs';
 import {lensProfile} from '../glass/optics.mjs';
 import {decodeLiveFrame} from '../glass/liveFrame.mjs';
+import {filmParameters,fitLens} from '../glass/composition.mjs';
 export function FusionGlass({snapshot:s,shapes,onError,previewWallpaper}:{snapshot:FusionSnapshot;shapes:Shape[];onError:(e:string)=>void;previewWallpaper?:Wallpaper}){
   const canvas=useRef<HTMLCanvasElement>(null),render=useRef<(()=>void)|null>(null),latest=useRef({s,shapes});latest.current={s,shapes};
   useEffect(()=>{
@@ -27,8 +28,10 @@ export function FusionGlass({snapshot:s,shapes,onError,previewWallpaper}:{snapsh
       gl.uniform2f(location('size'),s.width,s.height);gl.uniform1i(location('count'),shapes.length);const rects=new Float32Array(20);shapes.forEach((r,i)=>rects.set([r.x,r.y,r.width,r.height],i*4));gl.uniform4fv(location('shapes[0]'),rects);gl.uniform1fv(location('radii[0]'),new Float32Array(Array.from({length:5},(_,i)=>shapes[i]?.radius??32)));gl.uniform1fv(location('topRadii[0]'),new Float32Array(Array.from({length:5},(_,i)=>shapes[i]?.topRadius??shapes[i]?.radius??32)));
       gl.uniform1i(location('textured'),textured&&textureSource===(material.static_wallpaper?'static':'live')?1:0);
       gl.uniform4f(location('textureRect'),textureRect[0],textureRect[1],textureRect[2],textureRect[3]);
-      const hex=material.tint;gl.uniform3f(location('tint'),parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255);
-      for(const [key,value]of Object.entries({opacity:material.opacity,shade:material.shade,shine:material.shine,strength:material.refraction,dispersion:material.quality==='economy'?0:material.dispersion,bezel:material.bezel,thickness:material.thickness,frost:material.frost,peak:Math.max(...Array.from({length:513},(_,i)=>lensProfile(i/512,material.thickness,material.bezel)))}))gl.uniform1f(location(key),value);
+      const hex=material.tint,rgb=[parseInt(hex.slice(1,3),16)/255,parseInt(hex.slice(3,5),16)/255,parseInt(hex.slice(5,7),16)/255];
+      const film=filmParameters(material.opacity,material.shade,rgb),lens=fitLens(material,shapes);
+      gl.uniform3f(location('filmColor'),film.premultiplied[0],film.premultiplied[1],film.premultiplied[2]);gl.uniform1f(location('filmAlpha'),film.alpha);
+      for(const [key,value]of Object.entries({shine:material.shine,...lens,dispersion:material.quality==='economy'?0:material.dispersion,frost:material.frost,peak:Math.max(...Array.from({length:513},(_,i)=>lensProfile(i/512,lens.thickness,lens.bezel)))}))gl.uniform1f(location(key),value);
       gl.drawArrays(gl.TRIANGLES,0,6);
     }
     async function wallpaper(){if(disposed||loading||!latest.current.s.widgets[latest.current.s.config.source].static_wallpaper)return;const key=JSON.stringify([latest.current.s.screen,latest.current.s.config.source]);if(key===wallpaperKey&&Date.now()-lastWallpaper<15000)return;wallpaperKey=key;lastWallpaper=Date.now();loading=true;

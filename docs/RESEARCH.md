@@ -64,3 +64,10 @@ A captura do usuário demonstrou que limpar os bits de estilo não bastava. Conf
 ## Captura — 0.8.0
 
 [Microsoft: CreateForWindow](https://learn.microsoft.com/windows/win32/api/windows.graphics.capture.interop/nf-windows-graphics-capture-interop-igraphicscaptureiteminterop-createforwindow), [CreateFreeThreaded](https://learn.microsoft.com/en-us/uwp/api/windows.graphics.capture.direct3d11captureframepool.createfreethreaded), [acesso à textura D3D](https://learn.microsoft.com/en-us/windows/win32/api/windows.graphics.directx.direct3d11.interop/nf-windows-graphics-directx-direct3d11-interop-idirect3ddxgiinterfaceaccess-getinterface) e [exclusão de captura](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity). No ambiente Windows 10 22H2, a captura direta WPEVideoWallpaper/WorkerW retornou E_INVALIDARG; captura do monitor com máscara foi confirmada em teste nativo. Display affinity não é uma proteção de DRM: a documentação e a implementação não prometem uma fronteira de segurança para conteúdo externo.
+## DXGI — 0.8.1
+
+- Desktop Duplication, BGRA8 e rotação: https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/desktop-dup-api
+- Adaptador explícito requer driver UNKNOWN: https://learn.microsoft.com/en-us/windows/win32/api/d3d11/nf-d3d11-d3d11createdevice
+- Timeout e perda de sessão: https://learn.microsoft.com/en-us/windows/win32/api/dxgi1_2/nf-dxgi1_2-idxgioutputduplication-acquirenextframe
+
+DXGI substitui WGC, cuja borda amarela foi reportada no Windows 10. Não tentamos esconder um indicador de sessão WGC ainda ativa.

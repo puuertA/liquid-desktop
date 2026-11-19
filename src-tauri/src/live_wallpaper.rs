@@ -1,9 +1,9 @@
-//! Prefer Wallpaper Engine's desktop host; monitor fallback masks application windows.
-//! One lazy broker shares WGC frames across all WebViews; nothing is saved to disk.
+//! Borderless DXGI Desktop Duplication; application regions are masked.
+//! One lazy broker shares DXGI frames across all WebViews; nothing is saved to disk.
 use std::{collections::HashMap,ffi::c_void,sync::{mpsc,OnceLock},time::{Duration,Instant}};
 use tauri::Manager;
 
-use windows::{core::Interface,Graphics::{Capture::*,DirectX::{Direct3D11::IDirect3DDevice,DirectXPixelFormat}},Win32::{Foundation::{HWND,HMODULE},Graphics::{Direct3D::D3D_DRIVER_TYPE_HARDWARE,Direct3D11::*,Dxgi::IDXGIDevice},System::WinRT::{Direct3D11::*,Graphics::Capture::IGraphicsCaptureItemInterop}}};
+use windows::{core::Interface,Win32::{Foundation::HMODULE,Graphics::{Direct3D::D3D_DRIVER_TYPE_UNKNOWN,Direct3D11::*,Dxgi::*}}};
 
 #[link(name="user32")]
 unsafe extern "system" {
@@ -69,45 +69,41 @@ fn intersection(a:[i32;4],b:[i32;4])->Option<[i32;4]>{
  let x=a[0].max(b[0]);let y=a[1].max(b[1]);let r=(a[0]+a[2]).min(b[0]+b[2]);let d=(a[1]+a[3]).min(b[1]+b[3]);
  (r>x&&d>y).then_some([x,y,r-x,d-y])
 }
+fn texture_point(x:u32,y:u32,size:(u32,u32),rotation:i32)->(u32,u32){match rotation{
+ 2=>(y,size.1.saturating_sub(1+x)),3=>(size.0.saturating_sub(1+x),size.1.saturating_sub(1+y)),4=>(size.0.saturating_sub(1+y),x),_=>(x,y)
+}}
 struct Capture {
- target:Target,device:ID3D11Device,context:ID3D11DeviceContext,win_device:IDirect3DDevice,
- pool:Direct3D11CaptureFramePool,session:GraphicsCaptureSession,staging:Option<ID3D11Texture2D>,size:(u32,u32),
- pixels:Vec<u8>,sequence:u32,last_sample:Instant,last_frame:Instant,last_request:Instant,monitor_capture:bool,covered:Vec<[i32;4]>,previous_covered:Vec<[i32;4]>,
+ target:Target,device:ID3D11Device,context:ID3D11DeviceContext,duplication:IDXGIOutputDuplication,
+ staging:Option<ID3D11Texture2D>,size:(u32,u32),rotation:i32,pixels:Vec<u8>,sequence:u32,
+ last_sample:Instant,last_request:Instant,monitor_capture:bool,covered:Vec<[i32;4]>,previous_covered:Vec<[i32;4]>,
 }
-impl Drop for Capture {fn drop(&mut self){let _=self.session.Close();let _=self.pool.Close();}}
 impl Capture {
  fn new(mut target:Target)->Result<Self,String>{(move||->windows::core::Result<Self>{unsafe{
-  let mut device=None;let mut context=None;
-  D3D11CreateDevice(None,D3D_DRIVER_TYPE_HARDWARE,HMODULE::default(),D3D11_CREATE_DEVICE_BGRA_SUPPORT,None,D3D11_SDK_VERSION,Some(&mut device),None,Some(&mut context))?;
-  let device=device.unwrap();let context=context.unwrap();let dxgi:IDXGIDevice=device.cast()?;
-  let win_device:IDirect3DDevice=CreateDirect3D11DeviceFromDXGIDevice(&dxgi)?.cast()?;
-  let factory:IGraphicsCaptureItemInterop=windows::core::factory::<GraphicsCaptureItem,IGraphicsCaptureItemInterop>()?;
-  let fallback_rect=target.rect;
-  let direct:windows::core::Result<GraphicsCaptureItem>=match factory.CreateForWindow(HWND(target.leaf as *mut c_void)){
-   Ok(item)=>{if let Ok(r)=crate::native::rect(target.leaf){target.rect=r}Ok(item)},
-   Err(_)=>{if let Ok(r)=crate::native::rect(target.hwnd){target.rect=r}factory.CreateForWindow(HWND(target.hwnd as *mut c_void))}
-  };
-  let monitor_capture=direct.is_err();
-  let item:GraphicsCaptureItem=match direct{Ok(item)=>item,Err(_)=>{
-   let (m,r)=monitor(fallback_rect).map_err(|e|windows::core::Error::new(windows::core::HRESULT(0x80004005u32 as i32),e))?;target.monitor=m;target.rect=r;
-   factory.CreateForMonitor(windows::Win32::Graphics::Gdi::HMONITOR(m as *mut c_void))?
-  }};
-  let pool=Direct3D11CaptureFramePool::CreateFreeThreaded(&win_device,DirectXPixelFormat::B8G8R8A8UIntNormalized,2,item.Size()?)?;
-  let session=pool.CreateCaptureSession(&item)?;let _=session.SetIsCursorCaptureEnabled(false);
-  // Windows may keep its capture border if borderless capture is not permitted.
-  let _=session.SetIsBorderRequired(false);session.StartCapture()?;
-  Ok(Self{target,device,context,win_device,pool,session,staging:None,size:(0,0),pixels:Vec::new(),sequence:0,last_sample:Instant::now()-Duration::from_secs(1),last_frame:Instant::now(),last_request:Instant::now(),monitor_capture,covered:Vec::new(),previous_covered:Vec::new()})
- }})().map_err(|e|format!("Captura do Wallpaper Engine indisponível: {e}"))}
+  let factory:IDXGIFactory1=CreateDXGIFactory1()?;
+  for a in 0..32{let Ok(adapter)=factory.EnumAdapters1(a)else{break};
+   for o in 0..32{let Ok(output)=adapter.EnumOutputs(o)else{break};let desc=output.GetDesc()?;
+    if desc.Monitor.0 as isize!=target.monitor{continue}
+    let r=desc.DesktopCoordinates;target.rect=[r.left,r.top,r.right-r.left,r.bottom-r.top];
+    let mut device=None;let mut context=None;
+    D3D11CreateDevice(&adapter,D3D_DRIVER_TYPE_UNKNOWN,HMODULE::default(),D3D11_CREATE_DEVICE_BGRA_SUPPORT,None,D3D11_SDK_VERSION,Some(&mut device),None,Some(&mut context))?;
+    let device=device.unwrap();let context=context.unwrap();let output:IDXGIOutput1=output.cast()?;
+    let duplication=output.DuplicateOutput(&device)?;
+    return Ok(Self{target,device,context,duplication,staging:None,size:(0,0),rotation:desc.Rotation.0,pixels:Vec::new(),sequence:0,last_sample:Instant::now()-Duration::from_secs(1),last_request:Instant::now(),monitor_capture:true,covered:Vec::new(),previous_covered:Vec::new()})
+   }
+  }
+  Err(windows::core::Error::new(windows::core::HRESULT(0x80004005u32 as i32),"Monitor não encontrado no adaptador DXGI"))
+ }})().map_err(|e|format!("Captura DXGI indisponível: {e}"))}
  fn sample(&mut self)->Result<(),String>{
   self.last_request=Instant::now();if self.last_sample.elapsed()<Duration::from_millis(32){return Ok(())}self.last_sample=Instant::now();
   if unsafe{IsWindow(self.target.hwnd as *mut c_void)==0||IsWindow(self.target.leaf as *mut c_void)==0}{return Err("Wallpaper Engine reiniciou".into())}
-  if self.monitor_capture{self.previous_covered=std::mem::replace(&mut self.covered,occlusions());}
-  let mut newest=None;for _ in 0..3{match self.pool.TryGetNextFrame(){Ok(frame)=>{if let Some(old)=newest.replace(frame){let _=old.Close();}},Err(_)=>break}}
-  let Some(frame)=newest else{return if self.last_frame.elapsed()>Duration::from_secs(5){Err("Wallpaper Engine não forneceu novos frames".into())}else{Ok(())}};
-  let mut resize=None;
+  self.previous_covered=std::mem::replace(&mut self.covered,occlusions());
+  let mut info=DXGI_OUTDUPL_FRAME_INFO::default();let mut resource=None;
+  match unsafe{self.duplication.AcquireNextFrame(0,&mut info,&mut resource)}{
+   Ok(())=>{},Err(e)if e.code()==DXGI_ERROR_WAIT_TIMEOUT=>return Ok(()),Err(e)=>return Err(e.to_string())
+  }
+  // ReleaseFrame runs on every path after AcquireNextFrame, including copy/map errors.
   let result=(||->windows::core::Result<()>{unsafe{
-   let size=frame.ContentSize()?;if size.Width<=0||size.Height<=0{return Ok(())}
-   let texture:ID3D11Texture2D=frame.Surface()?.cast::<IDirect3DDxgiInterfaceAccess>()?.GetInterface()?;
+   let texture:ID3D11Texture2D=resource.ok_or_else(||windows::core::Error::from_hresult(windows::core::HRESULT(0x80004005u32 as i32)))?.cast()?;
    let mut desc=D3D11_TEXTURE2D_DESC::default();texture.GetDesc(&mut desc);
    if desc.Width>16384||desc.Height>16384||u64::from(desc.Width)*u64::from(desc.Height)>40_000_000{return Err(windows::core::Error::from_hresult(windows::core::HRESULT(0x80070057u32 as i32)))}
    if self.size!=(desc.Width,desc.Height){
@@ -117,20 +113,19 @@ impl Capture {
    let staging=self.staging.as_ref().unwrap();self.context.CopyResource(staging,&texture);
    let mut mapped=D3D11_MAPPED_SUBRESOURCE::default();self.context.Map(staging,0,D3D11_MAP_READ,0,Some(&mut mapped))?;
    let stride=self.size.0 as usize*4;for y in 0..self.size.1 as usize{std::ptr::copy_nonoverlapping((mapped.pData as *const u8).add(y*mapped.RowPitch as usize),self.pixels.as_mut_ptr().add(y*stride),stride)}
-   self.context.Unmap(staging,0);self.sequence=self.sequence.wrapping_add(1);self.last_frame=Instant::now();
-   if size.Width as u32!=self.size.0||size.Height as u32!=self.size.1{resize=Some(size);}
-   Ok(())
-  }})();let _=frame.Close();result.map_err(|e|e.to_string())?;
-  if let Some(size)=resize{self.pool.Recreate(&self.win_device,DirectXPixelFormat::B8G8R8A8UIntNormalized,2,size).map_err(|e|e.to_string())?;}Ok(())
+   self.context.Unmap(staging,0);self.sequence=self.sequence.wrapping_add(1);Ok(())
+  }})();let released=unsafe{self.duplication.ReleaseFrame()};result.and(released).map_err(|e|e.to_string())
  }
  fn crop(&self,request:[i32;4])->Result<Vec<u8>,String>{
   if self.pixels.is_empty(){return Err("Aguardando primeiro frame do Wallpaper Engine".into())}
-  let bounds=[self.target.rect[0],self.target.rect[1],self.size.0 as i32,self.size.1 as i32];let r=intersection(request,bounds).ok_or("Wallpaper Engine não cobre esta superfície")?;
+  let bounds=self.target.rect;let r=intersection(request,bounds).ok_or("Wallpaper Engine não cobre esta superfície")?;
   let mut out=Vec::with_capacity(20+r[2]as usize*r[3]as usize*4);
   for value in [r[0],r[1],r[2],r[3],self.sequence as i32]{out.extend_from_slice(&value.to_le_bytes())}
-  for y in r[1]-bounds[1]..r[1]-bounds[1]+r[3]{let offset=(y as usize*self.size.0 as usize+(r[0]-bounds[0])as usize)*4;
-   for p in self.pixels[offset..offset+r[2]as usize*4].chunks_exact(4){out.extend_from_slice(&[p[2],p[1],p[0],255]);}
-  }if self.monitor_capture&&!fixture_covers(r){mask_applications(&mut out,r,&self.previous_covered);mask_applications(&mut out,r,&self.covered);mask_applications(&mut out,r,&occlusions());}Ok(out)
+  for y in r[1]-bounds[1]..r[1]-bounds[1]+r[3]{for x in r[0]-bounds[0]..r[0]-bounds[0]+r[2]{
+   let (tx,ty)=texture_point(x as u32,y as u32,self.size,self.rotation);
+   if tx>=self.size.0||ty>=self.size.1{return Err("Geometria da captura mudou; aguardando novo monitor".into())}
+   let offset=(ty as usize*self.size.0 as usize+tx as usize)*4;let p=&self.pixels[offset..offset+4];out.extend_from_slice(&[p[2],p[1],p[0],255]);
+  }}if self.monitor_capture&&!fixture_covers(r){mask_applications(&mut out,r,&self.previous_covered);mask_applications(&mut out,r,&self.covered);mask_applications(&mut out,r,&occlusions());}Ok(out)
  }
 }
 struct Request {rect:[i32;4],reply:mpsc::SyncSender<Result<Vec<u8>,String>>}
@@ -185,6 +180,7 @@ pub fn maintain_affinity(app:&tauri::AppHandle){
  for(_,w)in app.webview_windows(){if let Ok(h)=crate::handle(&w){unsafe{let mut value=0;if GetWindowDisplayAffinity(h as *mut c_void,&mut value)!=0&&value==0x11{SetWindowDisplayAffinity(h as *mut c_void,0);}}}}
 }
 #[cfg(test)]mod tests{use super::*;
+ #[test]fn rotated_display_maps_to_texture(){assert_eq!(texture_point(0,0,(1920,1080),2),(0,1079));assert_eq!(texture_point(1079,1919,(1920,1080),2),(1919,0));assert_eq!(texture_point(1919,1079,(1920,1080),3),(0,0));assert_eq!(texture_point(1079,1919,(1920,1080),4),(0,1079));}
  #[test]fn clips_negative_monitor_coordinates(){assert_eq!(intersection([-1920,0,1920,1080],[-2000,30,400,300]),Some([-1920,30,320,300]));assert_eq!(intersection([0,0,10,10],[20,0,10,10]),None);}
  #[test]fn masks_application_pixels_without_touching_header_or_visible_wallpaper(){
   let mut data=vec![255;20+4*3*4];let header=data[..20].to_vec();mask_applications(&mut data,[-4,2,4,3],&[[-3,2,2,2]]);
@@ -193,7 +189,7 @@ pub fn maintain_affinity(app:&tauri::AppHandle){
  #[test]#[ignore="Captures live wallpaper with application masking; keeps pixels in memory"]fn reads_real_wallpaper_frames(){
   let found=targets();assert!(!found.is_empty(),"No Wallpaper Engine desktop host found");let r=found[0].rect;println!("Wallpaper host {:?}",found[0]);
   let mut previous:Option<Vec<u8>>=None;let mut count=0;let mut changed=false;let mut visible=0;
-  for _ in 0..40{match read(r){Ok(data)=>{count+=1;visible=data[20..].chunks_exact(4).filter(|p|p[3]>0).count();if let Some(old)=&previous{changed|=old[20..]!=data[20..]}previous=Some(data)},Err(e)=>println!("Capture pending/error: {e}")}if count>=3&&changed{break}std::thread::sleep(Duration::from_millis(100));}
+  for _ in 0..40{match read(r){Ok(data)=>{count+=1;visible=data[20..].chunks_exact(4).filter(|p|p[3]>0).count();if let Some(old)=&previous{changed|=old[20..].chunks_exact(4).zip(data[20..].chunks_exact(4)).any(|(a,b)|a[3]==255&&b[3]==255&&a[..3]!=b[..3])}previous=Some(data)},Err(e)=>println!("Capture pending/error: {e}")}if count>=3&&changed{break}std::thread::sleep(Duration::from_millis(100));}
   assert!(count>=3,"No frames delivered");println!("{count} frames; visible wallpaper pixels={visible}; pixel changes={changed}");assert!(visible>0,"Desktop is fully occluded; show wallpaper to validate movement");assert!(changed,"Wallpaper frame pixels did not change; check Wallpaper Engine playback/pause rules");
  }
 }

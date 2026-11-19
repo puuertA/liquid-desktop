@@ -100,3 +100,8 @@ A exclusão WDA_EXCLUDEFROMCAPTURE das janelas próprias é confirmada antes de 
 `SurfaceGlass` atende widgets individuais, barra e ilha, e `FusionGlass` atende tanto essas superfícies quanto o grupo. O shader recebe textureRect em coordenadas lógicas, preservando alinhamento e origem negativa. A fonte animada é desacoplada do redesenho/expansão da UI. O IPC tem apenas um pedido pendente por superfície; Econômico solicita 10 Hz, outros modos 30 Hz. Isso é cadência alvo, não resultado de benchmark.
 
 Layout.glass_source e o evento surface-material compartilham cor e propriedades ópticas. A primeira migração escolhe um widget ativo e sincroniza o material, preservando conteúdo/geometria; persist grava um backup anterior à migração. Os controles de material independentes da barra/ilha foram retirados para não divergir dos widgets. O recorte AppBar não foi alterado.
+## 0.8.1 — DXGI e composição consistente
+
+O broker agora usa Desktop Duplication no adaptador do monitor (D3D_DRIVER_TYPE_UNKNOWN), sem sessões Windows Graphics Capture. AcquireNextFrame usa timeout zero; WAIT_TIMEOUT preserva o último frame, outros erros recriam a sessão no próximo pedido. ReleaseFrame é executado inclusive quando a cópia falha. O recorte converte rotação do monitor, RowPitch e BGRA para RGBA. Exclusão de janelas, máscaras, limites de área e expiração permanecem.
+
+O shader compõe o filme com transmissão T=(1-opacity)*(1-0.7*shade), alfa 1-T e cor pré-multiplicada tint*opacity*(1-0.7*shade). Pixels capturados e mascarados produzem a mesma cor sobre o mesmo fundo; alpha interpolado é normalizado antes da refração. O bezel é limitado a 45% da menor dimensão da superfície, escalando espessura e deslocamento proporcionalmente para barra/ilha.

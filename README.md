@@ -1,13 +1,17 @@
-# Liquid Desktop 0.8.0
+# Liquid Desktop 0.8.1
+## Correções do vidro animado — 0.8.1
+
+A composição da cor e da transparência agora é idêntica entre pixels capturados e áreas mascaradas, eliminando a emenda retangular de cor. Barra e ilha usam uma lente proporcional à altura, preservando o centro transparente e a refração nas bordas. Encerre a versão anterior pela bandeja antes de instalar: uma sessão antiga de captura mantém seu indicador amarelo até ser encerrada.
+
 ## Refração animada e material compartilhado — 0.8.0
 
 Ative **Fundo animado / Wallpaper Engine** em Material. Os frames capturados alimentam a mesma lente WebGL2 usada no modo estático: refração, dispersão RGB, difusão e reflexos. Widgets individuais, widgets unidos, Top Bar e ilha Liquid/Adaptive agora usam esse mesmo renderizador e os mesmos parâmetros. Barra e ilha não têm mais uma cor cinza independente.
 
 Na primeira migração, o material de um widget ativo é compartilhado com os demais; posições, tamanhos e notas permanecem individuais. A configuração anterior é copiada para `settings-before-live-glass.json` antes da primeira gravação. **Sincronizar vidro dos widgets, barra e ilha** mantém o conjunto sincronizado. Desativar permite materiais individuais; a barra/ilha seguem o último material ajustado. Black e Graphite da ilha continuam sendo alternativas opacas.
 
-A captura tenta primeiro a janela do Wallpaper Engine. Neste Windows 10, essa janela e seu host rejeitaram captura direta; a alternativa validada usa Windows Graphics Capture do monitor. As imagens permanecem em memória, e os recortes enviados ao renderer têm as áreas dos aplicativos mascaradas. Onde outro aplicativo cobre o fundo, o vidro volta à translucidez: não reconstrói wallpaper oculto. A máscara é conservadora e pode cobrir margens/sombras de janelas.
+A versão 0.8.1 usa DXGI Desktop Duplication no monitor do Wallpaper Engine, sem iniciar sessões WGC que produziam a borda amarela. As imagens permanecem em memória, e os recortes enviados ao renderer têm as áreas dos aplicativos mascaradas. Onde outro aplicativo cobre o fundo, o vidro volta à translucidez: não reconstrói wallpaper oculto. A máscara é conservadora e pode cobrir margens/sombras de janelas.
 
-As próprias janelas do Liquid Desktop são excluídas da captura para evitar recursão. **Enquanto o modo animado estiver ativo, elas também podem não aparecer em screenshots/gravações que respeitam essa exclusão do Windows.** Ao desligar todas as superfícies animadas, a exclusão é removida. O Windows pode mostrar seu indicador de captura. Nada é enviado pela rede nem gravado em vídeo.
+As próprias janelas do Liquid Desktop são excluídas da captura para evitar recursão. **Enquanto o modo animado estiver ativo, elas também podem não aparecer em screenshots/gravações que respeitam essa exclusão do Windows.** Ao desligar todas as superfícies animadas, a exclusão é removida. Nada é enviado pela rede nem gravado em vídeo.
 
 O fundo precisa continuar reproduzindo no Wallpaper Engine; regras de pausa ao abrir outro app também pausam o efeito. A cadência solicitada é de até 30 atualizações/s (10 no Econômico), sem promessa de FPS medido. A captura é compartilhada por monitor e encerra sessões sem consumidores após dois segundos. Perda de dispositivo/Wallpaper Engine é sinalizada e há nova tentativa.
 ## Nitidez, barra e ilha — 0.7.1
@@ -89,7 +93,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.8.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.8.1_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 
