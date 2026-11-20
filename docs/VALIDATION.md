@@ -242,3 +242,12 @@ Shader final inspecionado em cena ilustrativa no Edge/SwiftShader: images/glass-
 - Armazenamento consulta `sysinfo::Disks`; a seleção de unidade usa o ponto de montagem e pode mudar se o Windows remapear a unidade.
 - Sem acesso visual confiável ao desktop durante o build, confira os nove widgets sobre wallpaper estático e Wallpaper Engine depois de instalar. Testes nativos opcionais que precisam do desktop permanecem ignorados na suíte padrão.
 - Instalador NSIS 0.10.0 gerado: 2.521.319 bytes; SHA-256 `E5126D93D6D49EFE273FA4891BB1CC234231CF673EC0EE4E1CFFBAFCF73D12EA`.
+
+## 0.10.1 — arraste e vidro dos novos widgets
+
+- A lista de janelas em `capabilities/default.json` agora contém todos os nove IDs. Teste de regressão compara ACL e catálogo nativo.
+- Media Player e Galeria não marcam mais suas superfícies inteiras como `data-no-drag`; controles continuam interativos.
+- Inspeção do Z-order do desktop em execução: oito janelas visíveis de widget nas posições 418–425, acima dos `WorkerW` visíveis nas posições 426–427. A falha de permissão em `outer_position` impedia calcular a geometria da lente e é a causa provável da aparência incorreta.
+- `npm run build` e 32 testes JS passaram; 24 testes Rust passaram, com 13 opcionais ignorados. Os testes opt-in de movimentação e ordenação de janelas ocultas também passaram no desktop real.
+- Verificação visual após instalar 0.10.1 ainda é necessária para confirmar o resultado final sobre o Wallpaper Engine.
+- Instalador NSIS 0.10.1: 2.534.410 bytes; SHA-256 `B334F91881715618438C90F836BBCB7D8AFD88BDD2631E7553B57F40D60964E8`.

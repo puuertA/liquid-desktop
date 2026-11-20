@@ -1,4 +1,8 @@
-# Liquid Desktop 0.10.0
+# Liquid Desktop 0.10.1
+
+## Correção de arraste e vidro — 0.10.1
+
+Os quatro widgets adicionados na 0.10.0 agora estão incluídos na permissão de janelas do Tauri. Isso libera a leitura da posição necessária para o vidro óptico e elimina `plugin:window|outer_position not allowed by ACL`. Media Player e Galeria voltaram a permitir arraste pelo fundo; apenas seus botões, entradas e controles bloqueiam o gesto. A ordem nativa observada coloca os widgets acima do `WorkerW` do desktop.
 
 ## Coleção de widgets — 0.10.0
 
@@ -117,7 +121,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.10.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.10.1_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

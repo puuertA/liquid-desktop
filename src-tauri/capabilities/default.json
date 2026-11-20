@@ -1,1 +1,1 @@
-{"identifier":"desktop","windows":["main","clock","analog","calendar","notes","system","island","topbar","fusion","control-center"],"permissions":["core:default"]}
+{"identifier":"desktop","windows":["main","clock","analog","calendar","notes","system","media","weather","gallery","storage","island","topbar","fusion","control-center"],"permissions":["core:default"]}

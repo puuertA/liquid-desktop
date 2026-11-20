@@ -407,4 +407,11 @@ mod tests {
         assert!(!layout.widgets["media"].enabled);
         assert!(layout.widgets["calendar"].calendar_events.is_empty());
     }
+    #[test]
+    fn every_widget_window_has_native_acl(){
+        let capabilities:serde_json::Value=serde_json::from_str(include_str!("../capabilities/default.json")).unwrap();
+        let windows=capabilities["windows"].as_array().unwrap();
+        for id in IDS {assert!(windows.iter().any(|window|window.as_str()==Some(id)),"missing ACL for {id}")}
+        assert!(capabilities["permissions"].as_array().unwrap().iter().any(|permission|permission.as_str()==Some("core:default")));
+    }
 }
