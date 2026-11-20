@@ -1,5 +1,9 @@
 # Liquid Desktop — linguagem visual
 
+## Coleção 0.10.0
+
+Os novos widgets usam a mesma lente e a mesma tipografia dos originais. O conteúdo tem prioridade: capa e faixa, previsão, fotografia ou unidade de armazenamento aparecem antes dos controles. Controles secundários ficam dentro da superfície, com contraste legível sobre wallpapers claros e escuros. Fotos podem ocupar toda a área sem moldura; quando a moldura está ativa, ela usa o renderer óptico existente. Animações de troca usam GSAP apenas quando há mudança de conteúdo e respeitam a preferência por movimento reduzido. Nenhum gráfico de áudio ou sensor apresenta dados simulados.
+
 ## Top Bar 0.6.0
 
 Barra de 36 unidades com raio 14, margem 8, tipografia 11 px e módulos compactos. Ícone de painel e relógio à esquerda; métricas e áudio à direita. No mesmo monitor da ilha, dois segmentos deixam livre uma faixa central de 480 unidades. Em telas menores, dados menos prioritários cedem espaço aos controles essenciais. Cor/opacidade próprias, fundo translúcido e reflexo superior estático, sem Acrylic ou animação decorativa permanente. A barra não substitui o shell. Desde 0.6.1, reserva área útil junto com a ilha; expandir a ilha não altera a linha de maximização.

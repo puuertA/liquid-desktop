@@ -1,27 +1,16 @@
 import {useEffect,useState} from 'react';
 import {invoke} from '@tauri-apps/api/core';
-import type {SystemSnapshot} from '../types';
+import type {Settings,SystemSnapshot} from '../types';
 function rate(value:number|null|undefined){if(value==null)return '—';return value>=1048576?`${(value/1048576).toFixed(1)} MiB/s`:`${(value/1024).toFixed(1)} KiB/s`}
-function Spark({values,max}:{values:number[];max?:number}) {
-  if(values.length<2)return <div className="spark-pending">Coletando amostras…</div>;
-  const ceiling=max??Math.max(1,...values);
-  const points=values.map((v,i)=>`${i/(values.length-1)*150},${38-Math.min(1,v/ceiling)*34}`).join(' ');
-  return <svg className="spark" viewBox="0 0 150 40" preserveAspectRatio="none" aria-hidden="true"><polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>;
-}
-export function SystemWidget() {
+function Spark({values,max}:{values:number[];max?:number}) {if(values.length<2)return <div className="spark-pending">Coletando amostras…</div>;const ceiling=max??Math.max(1,...values);const points=values.map((v,i)=>`${i/(values.length-1)*150},${38-Math.min(1,v/ceiling)*34}`).join(' ');return <svg className="spark" viewBox="0 0 150 40" preserveAspectRatio="none" aria-hidden="true"><polyline points={points} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>}
+export function SystemWidget({settings}:{settings:Settings}) {
   const [sample,setSample]=useState<SystemSnapshot|null>(null),[history,setHistory]=useState<SystemSnapshot[]>([]),[error,setError]=useState('');
-  useEffect(()=>{let disposed=false,busy=false,last=0;
-    async function refresh(){if(busy||document.hidden)return;busy=true;try{
-      const next=await invoke<SystemSnapshot>('system_snapshot');if(disposed)return;
-      setSample(next);setError('');if(next.sequence!==last&&next.cpu!=null){last=next.sequence;setHistory(h=>[...h.slice(-29),next])}
-    }catch(e){if(!disposed)setError(String(e))}finally{busy=false}}
-    void refresh();const timer=setInterval(refresh,2000);return()=>{disposed=true;clearInterval(timer)};
-  },[]);
-  const memory=sample&&sample.memory_total>0?sample.memory_used/sample.memory_total*100:null;
-  return <div className="system-widget"><div className="widget-heading"><h2>Sistema</h2><span className="live-label">A cada 2 s</span></div><div className="system-grid">
-    <section><span>CPU</span><strong>{sample?.cpu==null?'—':`${sample.cpu.toFixed(0)}%`}</strong><Spark values={history.map(s=>s.cpu??0)} max={100}/></section>
-    <section><span>Memória RAM</span><strong>{memory==null?'—':`${memory.toFixed(0)}%`}</strong><small>{sample&&sample.memory_total>0?`${(sample.memory_used/1073741824).toFixed(1)} / ${(sample.memory_total/1073741824).toFixed(1)} GiB`:'Aguardando leitura'}</small><Spark values={history.map(s=>s.memory_total?s.memory_used/s.memory_total*100:0)} max={100}/></section>
-    <section><span>↓ Download</span><strong className="rate">{rate(sample?.download)}</strong><Spark values={history.filter(s=>s.download!=null).map(s=>s.download!)}/></section>
-    <section><span>↑ Upload</span><strong className="rate">{rate(sample?.upload)}</strong><Spark values={history.filter(s=>s.upload!=null).map(s=>s.upload!)}/></section>
+  useEffect(()=>{let disposed=false,busy=false,last=0;async function refresh(){if(busy||document.hidden)return;busy=true;try{const next=await invoke<SystemSnapshot>('system_snapshot');if(disposed)return;setSample(next);setError('');if(next.sequence!==last&&next.cpu!=null){last=next.sequence;setHistory(h=>[...h.slice(-29),next])}}catch(e){if(!disposed)setError(String(e))}finally{busy=false}}void refresh();const timer=setInterval(refresh,2000);return()=>{disposed=true;clearInterval(timer)}},[]);
+  const memory=sample&&sample.memory_total>0?sample.memory_used/sample.memory_total*100:null,show=(metric:string)=>settings.system_metrics.includes(metric),compact=settings.system_layout==='compact';
+  return <div className={`system-widget ${compact?'system-compact':''}`}><div className="widget-heading"><h2>Sistema</h2><span className="live-label">A cada 2 s</span></div><div className="system-grid">
+    {show('cpu')&&<section><span>CPU</span><strong>{sample?.cpu==null?'—':`${sample.cpu.toFixed(0)}%`}</strong>{!compact&&<Spark values={history.map(s=>s.cpu??0)} max={100}/>}</section>}
+    {show('memory')&&<section><span>Memória RAM</span><strong>{memory==null?'—':`${memory.toFixed(0)}%`}</strong><small>{sample&&sample.memory_total>0?`${(sample.memory_used/1073741824).toFixed(1)} / ${(sample.memory_total/1073741824).toFixed(1)} GiB`:'Aguardando leitura'}</small>{!compact&&<Spark values={history.map(s=>s.memory_total?s.memory_used/s.memory_total*100:0)} max={100}/>}</section>}
+    {show('network')&&<><section><span>↓ Download</span><strong className="rate">{rate(sample?.download)}</strong>{!compact&&<Spark values={history.filter(s=>s.download!=null).map(s=>s.download!)}/>}</section><section><span>↑ Upload</span><strong className="rate">{rate(sample?.upload)}</strong>{!compact&&<Spark values={history.filter(s=>s.upload!=null).map(s=>s.upload!)}/>}</section></>}
+    {show('frequency')&&<section><span>Frequência CPU</span><strong className="rate">{sample?.cpu_frequency_mhz?`${sample.cpu_frequency_mhz} MHz`:'—'}</strong><small>{sample?.cpu_frequency_mhz?'Maior núcleo medido':'Indisponível neste sistema'}</small></section>}
   </div><small className="system-footnote">{error||`Rede: soma de ${sample?.interfaces??0} interfaces · pode incluir VPN`}</small></div>;
 }

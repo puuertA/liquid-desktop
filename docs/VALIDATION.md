@@ -224,3 +224,21 @@ Shader final inspecionado em cena ilustrativa no Edge/SwiftShader: images/glass-
 - Wallpaper Engine real: 3 frames, 14.672 pixels visíveis, movimento detectado comparando RGB somente onde ambos os frames tinham alpha 255. Pixels ficaram em memória, sem imagens salvas. Grande parte do desktop estava coberta por aplicativos.
 - Aparência final no desktop do usuário e ausência visual da borda após encerrar a versão antiga ainda exigem confirmação; os testes não substituem essa inspeção.
 - WebGL2 no Edge/SwiftShader: shader compilou e a emenda capturado/mascarado ficou em 0,475/255. Reprodução: execute `node scripts/check-glass-webgl.mjs` e abra `.tools/check-glass.html`; o resultado esperado é PASS. Teste sintético; não é inspeção visual do desktop.
+
+## 0.9.2 — notch sobre aplicativos
+
+- A política de captura é por superfície: ilha e Top Bar preservam pixels de aplicativos; widgets continuam mascarando-os.
+- Teste sintético com aplicativo escuro e placeholder branco: pixels escuros preservados na ilha, bloco branco tornado transparente, mesma área mascarada no widget.
+- Sem acesso visual ao desktop nesta sessão; a aparência sobre o VS Code da foto requer conferência após instalar.
+
+## 0.10.0 — coleção de widgets
+
+- `npm run build` passou; `npm test`: 32/32; `cargo test --offline --manifest-path src-tauri/Cargo.toml`: 23/23 (13 testes opcionais ignorados). A suíte cobre compilação web, lógica compartilhada e migração das preferências.
+- Leituras nativas opt-in passaram no Windows: GSMTC retornou duas sessões e uma faixa ativa após sair do sandbox; Core Audio leu volume e pico real; discos reportaram capacidade; CPU/RAM retornaram amostras reais. Dentro do sandbox, GSMTC retornou `0x80070005` (acesso negado).
+- Media Player usa o provedor GSMTC já usado pela ilha. O medidor consulta `IAudioMeterInformation`; quando indisponível, o medidor fica vazio.
+- Clima usa endpoints oficiais de previsão e geocodificação Open-Meteo. Configure cidade no painel; confirme retorno real no widget com rede disponível.
+- Consulta direta fora do sandbox confirmou previsão de São Paulo com temperatura atual, 120 horários e 5 dias; a geocodificação retornou São Paulo/Brasil com coordenadas. A chamada dentro do sandbox não tinha acesso à rede.
+- Galeria valida assinatura PNG, JPEG, WebP ou GIF, limita tamanho e guarda arquivos em `app_data_dir/gallery`; testa-se importando fotos e uma pasta pelo widget.
+- Armazenamento consulta `sysinfo::Disks`; a seleção de unidade usa o ponto de montagem e pode mudar se o Windows remapear a unidade.
+- Sem acesso visual confiável ao desktop durante o build, confira os nove widgets sobre wallpaper estático e Wallpaper Engine depois de instalar. Testes nativos opcionais que precisam do desktop permanecem ignorados na suíte padrão.
+- Instalador NSIS 0.10.0 gerado: 2.521.319 bytes; SHA-256 `E5126D93D6D49EFE273FA4891BB1CC234231CF673EC0EE4E1CFFBAFCF73D12EA`.

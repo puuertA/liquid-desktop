@@ -1,9 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Liquid Desktop",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "identifier": "dev.liquiddesktop.app",
   "build": { "beforeDevCommand": "npm run dev", "devUrl": "http://localhost:1420", "beforeBuildCommand": "npm run build", "frontendDist": "../dist" },
-  "app": { "windows": [{ "label": "main", "visible": false, "title": "Liquid Desktop · Widgets", "width": 940, "height": 820, "minWidth": 760, "minHeight": 660 }], "security": { "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost" } },
+  "app": { "windows": [{ "label": "main", "visible": false, "title": "Liquid Desktop · Widgets", "width": 940, "height": 820, "minWidth": 760, "minHeight": 660 }], "security": { "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src ipc: http://ipc.localhost https://api.open-meteo.com https://geocoding-api.open-meteo.com" } },
   "bundle": { "active": true, "targets": ["nsis"], "shortDescription": "Liquid Desktop — widgets e materiais ópticos", "resources": { "../docs/licenses/QuickLiquid.txt": "licenses/QuickLiquid.txt" }, "windows": { "nsis": { "installMode": "currentUser" } } }
 }

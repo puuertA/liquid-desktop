@@ -5,6 +5,7 @@ use sysinfo::{Networks, System};
 #[derive(Clone, Serialize)]
 pub struct Snapshot {
     pub cpu: Option<f32>,
+    pub cpu_frequency_mhz: Option<u64>,
     pub memory_used: u64,
     pub memory_total: u64,
     pub download: Option<f64>,
@@ -41,8 +42,11 @@ impl Monitor {
         let mut cpu = None;
         let mut download = None;
         let mut upload = None;
+        let mut cpu_frequency_mhz = None;
         if ready {
             self.system.refresh_cpu_usage();
+            self.system.refresh_cpu_frequency();
+            cpu_frequency_mhz=self.system.cpus().iter().map(|cpu|cpu.frequency()).filter(|&mhz|mhz>0).max();
             self.networks.refresh(true);
             cpu = Some(self.system.global_cpu_usage().clamp(0.0, 100.0));
             if !self.networks.is_empty() {
@@ -65,6 +69,7 @@ impl Monitor {
         }
         let snapshot = Snapshot {
             cpu,
+            cpu_frequency_mhz,
             memory_used: self.system.used_memory(),
             memory_total: self.system.total_memory(),
             download,

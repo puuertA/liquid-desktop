@@ -1,4 +1,24 @@
-# Liquid Desktop 0.9.0
+# Liquid Desktop 0.10.0
+
+## Coleção de widgets — 0.10.0
+
+Agora há nove widgets: relógios digital e analógico, calendário, notas, sistema, Media Player, clima, galeria e armazenamento. Ative cada um em **Widgets**; posição, tamanho, material e preferências são salvos. **Restaurar configurações padrão** conserva fotos, notas, eventos e a posição atual.
+
+- **Media Player:** reutiliza as sessões de mídia da ilha. Mostra capa, faixa, artista, aplicativo, progresso e controles. O medidor opcional lê o pico real da saída de áudio do Windows. Há layouts compacto, horizontal e expandido.
+- **Clima:** busque uma cidade no painel. A previsão vem da Open-Meteo, com unidades e intervalo de atualização configuráveis. Uma falha de rede aparece no widget; não há previsão simulada.
+- **Galeria:** importe fotos ou uma pasta pelo widget. As imagens são copiadas para os dados locais do app; o limite é de 120 arquivos e 25 MB por arquivo. Ajuste intervalo, ordem, enquadramento e moldura de vidro.
+- **Armazenamento:** mostra capacidade, uso e espaço livre das unidades que o Windows relata; escolha unidades no painel. Sem seleção, exibe todas.
+- **Sistema, calendário e notas:** seleção das métricas e layout do sistema, frequência de CPU quando disponível, eventos locais no calendário e prévia segura de Markdown nas notas. Sensores de GPU e temperaturas não são mostrados sem uma fonte confiável; lembretes ficam no calendário e ainda não geram notificações do Windows.
+
+O motor óptico, a Top Bar e a Dynamic Island continuam os mesmos. O vidro dos widgets novos usa a mesma captura do Wallpaper Engine e os mesmos controles de material.
+## Notch sobre aplicativos — 0.9.2
+
+A ilha Liquid/Adaptive e a Top Bar agora recebem os pixels dos aplicativos que estão atrás delas no monitor capturado, inclusive janelas de tema escuro. Os widgets continuam mascarando aplicativos para permanecerem como superfícies de desktop. Quando a exclusão da própria janela produz um grande bloco branco no frame DXGI, esse bloco fica transparente antes da refração, inclusive no notch expandido. Não é possível mostrar conteúdo de janelas que o próprio Windows ou outro aplicativo protege da captura.
+
+## Captura e notch — 0.9.1
+
+Em alguns drivers do Windows 10, DXGI entrega blocos brancos opacos dentro das janelas transparentes excluídas da captura. Blocos grandes e quase totalmente brancos agora ficam transparentes na textura, preservando o vidro sem o quadrado opaco. Pequenos pontos claros e o restante da imagem permanecem intactos. A ilha Liquid/Adaptive posiciona o canvas óptico na mesma camada usada pela barra e pelos widgets; os modos Black e Graphite continuam opacos quando escolhidos.
+
 ## Painel redesenhado — 0.9.0
 
 O painel agora usa navegação lateral para Visão geral, Widgets, Dynamic Island, Top Bar, Materiais, Aparência e Aplicativo. A tela de widgets mantém todas as configurações e mostra uma prévia contextual. O Material Studio separa presets, prévia com o renderer óptico real e controles por função. A aparência do painel usa neutros minerais e verde discreto; o vidro permanece concentrado nas prévias e no desktop. Preferências e comandos nativos permanecem compatíveis.
@@ -97,7 +117,7 @@ Widgets nativos para o desktop Windows, com Tauri 2, Rust, React/TypeScript e vi
 
 ## Usar
 
-Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.9.0_x64-setup.exe`.
+Encerre a versão antiga pelo menu **Sair do Liquid Desktop** na bandeja antes de instalar a atualização. O instalador fica em `src-tauri/target/release/bundle/nsis/Liquid Desktop_0.10.0_x64-setup.exe`.
 
 No painel, escolha um widget na coleção e clique **Adicionar**. Selecione o card para configurar apenas aquele widget. **Remover** fecha sua janela e mantém suas preferências. Widgets ativos são reabertos ao iniciar o app.
 

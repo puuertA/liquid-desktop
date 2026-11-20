@@ -11,6 +11,8 @@ mod settings;
 mod startup;
 mod wallpaper;
 mod live_wallpaper;
+mod storage;
+mod gallery;
 use settings::{valid_id, Layout, Settings, IDS};
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
@@ -212,6 +214,9 @@ fn update_widget(
             "frost",
             "quality",
             "motion",
+            "media_layout","media_visualizer","weather_city","weather_latitude","weather_longitude","weather_unit","weather_refresh",
+            "gallery_interval","gallery_fit","gallery_random","gallery_frame","storage_devices","system_layout","system_metrics",
+            "notes_style",
         ]
         .contains(&key.as_str())
         {
@@ -244,6 +249,18 @@ fn update_widget(
     } else {
         publish(&app, &id, &updated)
     }
+}
+#[tauri::command]
+fn reset_widget(app:tauri::AppHandle,window:tauri::WebviewWindow,id:String)->Result<(),String>{
+    if window.label()!="main"{return Err("Use o painel".into())}valid_id(&id)?;
+    let state=app.state::<State>();let mut layout=state.layout.lock().unwrap();let mut next=layout.clone();
+    let old=&next.widgets[&id];let mut fresh=Layout::default().widgets[&id].clone();
+    fresh.enabled=old.enabled;fresh.note=old.note.clone();fresh.calendar_events=old.calendar_events.clone();
+    fresh.x=old.x;fresh.y=old.y;
+    if let Some(w)=app.get_webview_window(&id){place_settings(&w,&fresh)?}
+    next.widgets.insert(id.clone(),fresh);
+    if next.sync_theme{next.sync_material(&id)?}persist(&app,&next)?;*layout=next.clone();drop(layout);
+    for widget in IDS{publish(&app,widget,&next)?}Ok(())
 }
 fn create_window(app: &tauri::AppHandle, id: &str) -> Result<(), String> {
     valid_id(id)?;
@@ -392,6 +409,13 @@ fn save_note(
     *layout = next.clone();
     drop(layout);
     publish(&app, "notes", &next)
+}
+#[tauri::command]
+fn save_calendar_events(app:tauri::AppHandle,window:tauri::WebviewWindow,events:Vec<settings::CalendarEvent>)->Result<(),String>{
+    if !["calendar","fusion"].contains(&window.label()){return Err("Use o calendario".into())}
+    let state=app.state::<State>();let mut layout=state.layout.lock().unwrap();let mut next=layout.clone();
+    next.widgets.get_mut("calendar").unwrap().calendar_events=events;
+    next.widgets["calendar"].validate()?;persist(&app,&next)?;*layout=next.clone();drop(layout);publish(&app,"calendar",&next)
 }
 #[tauri::command]
 fn widget_rect(window: tauri::WebviewWindow) -> Result<[i32; 4], String> {
@@ -665,6 +689,7 @@ fn main() {
             island::update_island,
             island::island_snapshot,
             island::island_media_action,
+            island::media_peak,
             island::island_volume,
             island::island_timer,
             island::island_region,
@@ -678,10 +703,17 @@ fn main() {
             surface_material,
             live_wallpaper::live_wallpaper_frame,
             system_snapshot,
+            storage::storage_snapshot,
+            gallery::gallery_list,
+            gallery::gallery_import,
+            gallery::gallery_image,
+            gallery::gallery_remove,
             update_widget,
+            reset_widget,
             create_widget,
             remove_widget,
             save_note,
+            save_calendar_events,
             widget_rect,
             begin_drag,
             update_drag,

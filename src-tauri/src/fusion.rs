@@ -8,7 +8,7 @@ pub struct Config {pub enabled:bool,pub monitor:usize,pub source:String,pub posi
 impl Default for Config {fn default()->Self{Self{enabled:false,monitor:0,source:"clock".into(),positions:BTreeMap::new()}}}
 impl Config {pub fn validate(&self)->Result<(),String>{
     crate::settings::valid_id(&self.source)?;
-    if self.monitor>15||self.positions.len()>5{return Err("Grupo inválido".into())}
+    if self.monitor>15||self.positions.len()>9{return Err("Grupo inválido".into())}
     for(id,p)in &self.positions{crate::settings::valid_id(id)?;if p.iter().any(|v|!v.is_finite()||!(0.0..=16000.0).contains(v)){return Err("Posição do grupo inválida".into())}}
     Ok(())
 }}
@@ -66,7 +66,7 @@ fn region(w:&tauri::WebviewWindow,s:&Snapshot,shapes:&[Shape])->Result<(),String
 #[tauri::command]
 pub fn fusion_positions(app:tauri::AppHandle,window:tauri::WebviewWindow,positions:BTreeMap<String,[f64;2]>,commit:bool)->Result<(),String>{
     allowed(&window)?;let mut state=snapshot(&app)?;
-    if positions.len()>5{return Err("Muitos widgets".into())}
+    if positions.len()>9{return Err("Muitos widgets".into())}
     for(id,p)in &positions{
         let shape=state.shapes.iter_mut().find(|s|s.id==*id).ok_or("Widget inativo")?;
         if !state.widgets[id].edit{return Err("Ative Permitir arrastar no painel".into())}

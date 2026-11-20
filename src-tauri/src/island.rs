@@ -54,7 +54,7 @@ pub struct Snapshot {
     pub remaining: Option<u64>,
 }
 pub fn allowed(window: &tauri::WebviewWindow) -> Result<(), String> {
-    if window.label() == "island" {
+    if ["island","media","fusion"].contains(&window.label()) {
         Ok(())
     } else {
         Err("Comando reservado à Dynamic Island".into())
@@ -146,6 +146,11 @@ pub async fn island_media_action(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+pub async fn media_peak(window:tauri::WebviewWindow)->Result<f32,String>{
+    if !["media","fusion"].contains(&window.label()){return Err("Use o Media Player".into())}
+    tauri::async_runtime::spawn_blocking(||{let _apartment=media::Apartment::new()?;media::peak()}).await.map_err(|e|e.to_string())?
 }
 #[tauri::command]
 pub async fn island_volume(

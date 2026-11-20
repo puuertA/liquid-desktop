@@ -233,6 +233,8 @@ mod tests {
         );
         let volume = volume(None, None).expect("Core Audio read");
         assert!((0.0..=1.0).contains(&volume.level));
+        let peak=peak().expect("Core Audio peak");
+        assert!((0.0..=1.0).contains(&peak));
         assert!(provider.action("invalid-session", "toggle", None).is_err());
     }
 }
@@ -271,6 +273,12 @@ fn endpoint() -> windows::core::Result<IAudioEndpointVolume> {
             .Activate(CLSCTX_ALL, None)
     }
 }
+pub fn peak()->Result<f32,String>{unsafe{
+    let enumerator:IMMDeviceEnumerator=CoCreateInstance(&MMDeviceEnumerator,None,CLSCTX_ALL).map_err(|e|e.to_string())?;
+    let device=enumerator.GetDefaultAudioEndpoint(eRender,eMultimedia).map_err(|e|e.to_string())?;
+    let meter:IAudioMeterInformation=device.Activate(CLSCTX_ALL,None).map_err(|e|e.to_string())?;
+    meter.GetPeakValue().map(|value|value.clamp(0.0,1.0)).map_err(|e|e.to_string())
+}}
 pub fn volume(level: Option<f32>, muted: Option<bool>) -> Result<Volume, String> {
     unsafe {
         let endpoint = endpoint().map_err(|e| e.to_string())?;

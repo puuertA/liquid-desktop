@@ -4,10 +4,7 @@ import {listen,emit} from '@tauri-apps/api/event';
 import type {WidgetId} from '../types';
 import type {FusionSnapshot,Shape} from './types';
 import {FusionGlass} from './FusionGlass';
-import {DigitalClock,AnalogClock} from '../widgets/ClockWidgets';
-import {CalendarWidget} from '../widgets/CalendarWidget';
-import {NotesWidget} from '../widgets/NotesWidget';
-import {SystemWidget} from '../widgets/SystemWidget';
+import {WidgetContent} from '../widgets/WidgetContent';
 import './fusion.css';
 type Positions=Partial<Record<WidgetId,[number,number]>>;
 export function FusionWindow(){
@@ -27,7 +24,7 @@ export function FusionWindow(){
   function down(e:PointerEvent<HTMLDivElement>,shape:Shape){if(!state?.widgets[shape.id].edit||ending.current||drag.current||e.button!==0||(e.target as HTMLElement).closest('button,input,textarea,select,a'))return;e.preventDefault();e.currentTarget.focus();e.currentTarget.setPointerCapture(e.pointerId);drag.current={id:shape.id,pointer:e.pointerId,element:e.currentTarget,x:e.clientX,y:e.clientY,origin:[shape.x,shape.y],current:[shape.x,shape.y]}}
   function move(e:PointerEvent){const d=drag.current;if(!d||!state)return;const shape=shapes.find(s=>s.id===d.id)!;d.current=[Math.max(0,Math.min(state.width-shape.width,d.origin[0]+e.clientX-d.x)),Math.max(0,Math.min(state.height-shape.height,d.origin[1]+e.clientY-d.y))];setShapes(rows=>rows.map(r=>r.id===d.id?{...r,x:d.current[0],y:d.current[1]}:r));if(performance.now()-last.current>80){last.current=performance.now();pending.current={[d.id]:d.current};void flush().catch(e=>report(String(e)))}}
   if(!state)return null;
-  return <div className="fusion-host" style={{'--glass-tint':state.widgets[state.config.source].tint} as CSSProperties}><FusionGlass snapshot={state} shapes={shapes} onError={report}/>{shapes.map(shape=>{const s=state.widgets[shape.id];return <div key={shape.id} className={`fusion-widget widget-surface kind-${shape.id}`} data-editing={s.edit} tabIndex={s.edit?0:-1} style={{left:shape.x,top:shape.y,width:shape.width,height:shape.height}} onPointerDown={e=>down(e,shape)} onPointerMove={move} onPointerUp={()=>void finish()} onPointerCancel={()=>void finish(true)} onLostPointerCapture={()=>void finish()}>
-    <div className="widget-body">{shape.id==='clock'?<DigitalClock settings={s}/>:shape.id==='analog'?<AnalogClock settings={s}/>:shape.id==='calendar'?<CalendarWidget/>:shape.id==='notes'?<NotesWidget initial={s.note}/>:<SystemWidget/>}</div>{(s.edit||error)&&<div className="widget-status"><span className="edit-note">{error||'Aproxime para unir · Esc cancela'}</span></div>}
+  return <div className="fusion-host" style={{'--glass-tint':state.widgets[state.config.source].tint} as CSSProperties}><FusionGlass snapshot={state} shapes={shapes.filter(shape=>shape.id!=='gallery'||state.widgets.gallery.gallery_frame)} onError={report}/>{shapes.map(shape=>{const s=state.widgets[shape.id];return <div key={shape.id} className={`fusion-widget widget-surface kind-${shape.id}`} data-editing={s.edit} tabIndex={s.edit?0:-1} style={{left:shape.x,top:shape.y,width:shape.width,height:shape.height}} onPointerDown={e=>down(e,shape)} onPointerMove={move} onPointerUp={()=>void finish()} onPointerCancel={()=>void finish(true)} onLostPointerCapture={()=>void finish()}>
+    <div className="widget-body"><WidgetContent id={shape.id} settings={s}/></div>{(s.edit||error)&&<div className="widget-status"><span className="edit-note">{error||'Aproxime para unir · Esc cancela'}</span></div>}
   </div>})}</div>;
 }

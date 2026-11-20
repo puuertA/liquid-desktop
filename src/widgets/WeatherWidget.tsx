@@ -1,0 +1,25 @@
+import {useEffect,useRef,useState} from 'react';
+import gsap from 'gsap';
+import type {Settings} from '../types';
+type Forecast={current:{time:string;temperature_2m:number;apparent_temperature:number;relative_humidity_2m:number;weather_code:number;wind_speed_10m:number};hourly:{time:string[];temperature_2m:number[];precipitation_probability:number[]};daily:{time:string[];temperature_2m_max:number[];temperature_2m_min:number[];precipitation_probability_max:number[];weather_code:number[]}};
+const condition=(code:number)=>code===0?'Céu limpo':code<3?'Parcialmente nublado':code===3?'Nublado':code<50?'Névoa':code<70?'Chuva':code<80?'Neve':code<90?'Pancadas de chuva':'Tempestade';
+function WeatherIcon({code}:{code:number}){const cloud=<path d="M7 17h11a4 4 0 0 0 0-8 6 6 0 0 0-11-1 4.5 4.5 0 0 0 0 9z"/>;return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{code<3&&<><circle cx="8" cy="7" r="3"/><path d="M8 1v2M2 7h2M4 3l1.5 1.5"/></>}{code!==0&&cloud}{code===0&&<><circle cx="12" cy="12" r="4"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3M4 4l2 2M18 18l2 2M4 20l2-2M18 6l2-2"/></>}{code>=50&&code<70&&<path d="M8 19l-1 2M13 19l-1 2M18 19l-1 2"/>}{code>=70&&code<80&&<path d="M8 20h1M13 20h1M18 20h1"/>}{code>=80&&<path d="M8 19l-1 2M13 19l-1 2M18 19l-1 2"/>}</svg>}
+export function WeatherWidget({settings}:{settings:Settings}){
+  const [data,setData]=useState<Forecast|null>(null),[error,setError]=useState(''),[updated,setUpdated]=useState<Date|null>(null);
+  const currentIcon=useRef<HTMLSpanElement>(null);
+  useEffect(()=>{const el=currentIcon.current;if(!el||!settings.motion||matchMedia('(prefers-reduced-motion: reduce)').matches)return;const tween=gsap.fromTo(el,{opacity:.35,y:5},{opacity:1,y:0,duration:.45,ease:'power2.out'});return()=>{tween.kill()}},[data?.current.weather_code,settings.motion]);
+  const {weather_latitude:lat,weather_longitude:lon,weather_unit:unit,weather_refresh:minutes}=settings;
+  useEffect(()=>{setData(null);if(lat==null||lon==null)return;let disposed=false,controller:AbortController|null=null;
+    async function refresh(){if(document.hidden)return;controller?.abort();controller=new AbortController();try{const url=new URL('https://api.open-meteo.com/v1/forecast');url.search=new URLSearchParams({latitude:String(lat),longitude:String(lon),current:'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m',hourly:'temperature_2m,precipitation_probability',daily:'temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code',timezone:'auto',forecast_days:'5',temperature_unit:unit}).toString();const response=await fetch(url,{signal:controller.signal});if(!response.ok)throw Error(`Clima indisponível (${response.status})`);const result=await response.json() as Forecast;if(!disposed){setData(result);setError('');setUpdated(new Date())}}catch(e){if(!disposed&&(e as Error).name!=='AbortError')setError(String(e))}}
+    void refresh();const timer=setInterval(refresh,minutes*60000);return()=>{disposed=true;controller?.abort();clearInterval(timer)};
+  },[lat,lon,unit,minutes]);
+  if(lat==null||lon==null)return <div className="weather-widget"><div className="widget-heading"><h2>Clima</h2></div><p className="widget-empty">Escolha uma cidade nas configurações.</p></div>;
+  const current=data?.current,day=data?.daily,hour=data?.hourly.time.findIndex(t=>t>=data.current.time.slice(0,13))??-1;
+  return <div className="weather-widget"><div className="widget-heading"><h2>{settings.weather_city||'Clima'}</h2><span className="live-label">{updated?updated.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Atualizando'}</span></div>
+    {current&&day?<><div className="weather-current"><span ref={currentIcon} aria-hidden="true"><WeatherIcon code={current.weather_code}/></span><strong>{Math.round(current.temperature_2m)}°</strong><div><b>{condition(current.weather_code)}</b><small>Máx. {Math.round(day.temperature_2m_max[0])}° · Mín. {Math.round(day.temperature_2m_min[0])}°</small></div></div>
+      <div className="weather-facts"><span>Sensação <b>{Math.round(current.apparent_temperature)}°</b></span><span>Umidade <b>{current.relative_humidity_2m}%</b></span><span>Chuva <b>{day.precipitation_probability_max[0]}%</b></span><span>Vento <b>{Math.round(current.wind_speed_10m)} km/h</b></span></div>
+      {hour>=0&&<div className="weather-hours">{data!.hourly.time.slice(hour,hour+5).map((time,i)=><span key={time}><small>{time.slice(11,13)}h</small><b>{Math.round(data!.hourly.temperature_2m[hour+i])}°</b><small>Chuva {data!.hourly.precipitation_probability[hour+i]}%</small></span>)}</div>}
+      <div className="weather-days">{day.time.slice(1,4).map((time,i)=><span key={time}>{new Date(`${time}T12:00:00`).toLocaleDateString('pt-BR',{weekday:'short'})} <b><WeatherIcon code={day.weather_code[i+1]}/></b> {Math.round(day.temperature_2m_max[i+1])}° / {Math.round(day.temperature_2m_min[i+1])}°</span>)}</div>
+    </>:<p className="widget-empty">{error||'Buscando previsão…'}</p>}{data&&error&&<small role="status">{error}</small>}
+  </div>;
+}

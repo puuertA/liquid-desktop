@@ -3,11 +3,11 @@ in vec2 position;out vec2 uv;void main(){uv=position*.5+.5;gl_Position=vec4(posi
 export const fragment=`#version 300 es
 precision highp float;
 in vec2 uv;out vec4 color;
-uniform vec2 size;uniform vec4 shapes[5];uniform float radii[5];uniform float topRadii[5];uniform int count;uniform sampler2D backdrop;uniform bool textured;
+uniform vec2 size;uniform vec4 shapes[9];uniform float radii[9];uniform float topRadii[9];uniform int count;uniform sampler2D backdrop;uniform bool textured;
 uniform vec4 textureRect;
 uniform vec3 filmColor;uniform float filmAlpha;
 uniform float shine,strength,dispersion,bezel,thickness,peak,frost;
-float field(vec2 p){float d=100000.;for(int i=0;i<5;i++){if(i>=count)break;vec4 r=shapes[i];float radius=min(p.y<r.y+r.w*.5?topRadii[i]:radii[i],min(r.z,r.w)*.5);vec2 q=abs(p-r.xy-r.zw*.5)-(r.zw*.5-radius);float n=length(max(q,0.))+min(max(q.x,q.y),0.)-radius;float h=max(1.-abs(d-n)/48.,0.);d=min(d,n)-h*h*12.;}return d;}
+float field(vec2 p){float d=100000.;for(int i=0;i<9;i++){if(i>=count)break;vec4 r=shapes[i];float radius=min(p.y<r.y+r.w*.5?topRadii[i]:radii[i],min(r.z,r.w)*.5);vec2 q=abs(p-r.xy-r.zw*.5)-(r.zw*.5-radius);float n=length(max(q,0.))+min(max(q.x,q.y),0.)-radius;float h=max(1.-abs(d-n)/48.,0.);d=min(d,n)-h*h*12.;}return d;}
 vec4 sampleBackground(vec2 p){vec2 v=clamp((p-textureRect.xy)/textureRect.zw,0.,1.);vec2 b=vec2(frost)/textureRect.zw;return texture(backdrop,v)*.5+(texture(backdrop,v+b)+texture(backdrop,v-b))*.25;}
 void main(){
  vec2 p=vec2(uv.x,1.-uv.y)*size;float d=field(p);float aa=max(fwidth(d),.001);float alpha=1.-smoothstep(-aa,aa,d);if(alpha<=0.){color=vec4(0);return;}

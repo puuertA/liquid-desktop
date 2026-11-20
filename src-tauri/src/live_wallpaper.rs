@@ -65,6 +65,28 @@ fn occlusions()->Vec<[i32;4]>{let mut out=Vec::new();unsafe{EnumWindows(occluder
 fn mask_applications(data:&mut[u8],rect:[i32;4],covered:&[[i32;4]]){
  for bounds in covered{if let Some(r)=intersection(rect,*bounds){for y in r[1]-rect[1]..r[1]-rect[1]+r[3]{let offset=20+(y as usize*rect[2]as usize+(r[0]-rect[0])as usize)*4;data[offset..offset+r[2]as usize*4].fill(0);}}}
 }
+// Some Windows 10 drivers expose exclusion placeholders as hard white rectangles
+// inside transparent WebView windows. Only remove large, nearly solid white
+// components; small highlights and bright wallpaper details stay untouched.
+fn mask_capture_placeholders(data:&mut[u8],width:usize,height:usize,over_apps:bool){
+ let count=width.saturating_mul(height);if count==0||count>16_000_000{return}
+ let mut seen=vec![false;count];
+ let white=|i:usize,bytes:&[u8]|{let p=20+i*4;p+3<bytes.len()&&bytes[p+3]==255&&bytes[p]>=248&&bytes[p+1]>=248&&bytes[p+2]>=248};
+ for start in 0..count{
+  if seen[start]||!white(start,data){continue}
+  seen[start]=true;let mut stack=vec![start];let mut pixels=Vec::new();let(mut left,mut right,mut top,mut bottom)=(start%width,start%width,start/width,start/width);
+  while let Some(i)=stack.pop(){pixels.push(i);let x=i%width;let y=i/width;left=left.min(x);right=right.max(x);top=top.min(y);bottom=bottom.max(y);
+   for next in [x.checked_sub(1).map(|_|i-1), (x+1<width).then_some(i+1),y.checked_sub(1).map(|_|i-width),(y+1<height).then_some(i+width)].into_iter().flatten(){if !seen[next]&&white(next,data){seen[next]=true;stack.push(next)}}
+  }
+  let area=(right-left+1)*(bottom-top+1);
+  let fill=if over_apps{75}else{94};
+  if right-left>=23&&bottom-top>=23&&pixels.len()*100>=area*fill&&(over_apps||area<count*4/5){for i in pixels{let p=20+i*4;data[p..p+4].fill(0)}}
+ }
+}
+fn apply_capture_policy(data:&mut[u8],rect:[i32;4],covered:&[[i32;4]],over_apps:bool){
+ if !over_apps{mask_applications(data,rect,covered)}
+ mask_capture_placeholders(data,rect[2]as usize,rect[3]as usize,over_apps);
+}
 fn intersection(a:[i32;4],b:[i32;4])->Option<[i32;4]>{
  let x=a[0].max(b[0]);let y=a[1].max(b[1]);let r=(a[0]+a[2]).min(b[0]+b[2]);let d=(a[1]+a[3]).min(b[1]+b[3]);
  (r>x&&d>y).then_some([x,y,r-x,d-y])
@@ -116,7 +138,7 @@ impl Capture {
    self.context.Unmap(staging,0);self.sequence=self.sequence.wrapping_add(1);Ok(())
   }})();let released=unsafe{self.duplication.ReleaseFrame()};result.and(released).map_err(|e|e.to_string())
  }
- fn crop(&self,request:[i32;4])->Result<Vec<u8>,String>{
+ fn crop(&self,request:[i32;4],over_apps:bool)->Result<Vec<u8>,String>{
   if self.pixels.is_empty(){return Err("Aguardando primeiro frame do Wallpaper Engine".into())}
   let bounds=self.target.rect;let r=intersection(request,bounds).ok_or("Wallpaper Engine não cobre esta superfície")?;
   let mut out=Vec::with_capacity(20+r[2]as usize*r[3]as usize*4);
@@ -125,10 +147,13 @@ impl Capture {
    let (tx,ty)=texture_point(x as u32,y as u32,self.size,self.rotation);
    if tx>=self.size.0||ty>=self.size.1{return Err("Geometria da captura mudou; aguardando novo monitor".into())}
    let offset=(ty as usize*self.size.0 as usize+tx as usize)*4;let p=&self.pixels[offset..offset+4];out.extend_from_slice(&[p[2],p[1],p[0],255]);
-  }}if self.monitor_capture&&!fixture_covers(r){mask_applications(&mut out,r,&self.previous_covered);mask_applications(&mut out,r,&self.covered);mask_applications(&mut out,r,&occlusions());}Ok(out)
+  }}if self.monitor_capture&&!fixture_covers(r){
+    if !over_apps{mask_applications(&mut out,r,&self.previous_covered);mask_applications(&mut out,r,&self.covered)}
+    apply_capture_policy(&mut out,r,&occlusions(),over_apps);
+  }Ok(out)
  }
 }
-struct Request {rect:[i32;4],reply:mpsc::SyncSender<Result<Vec<u8>,String>>}
+struct Request {rect:[i32;4],over_apps:bool,reply:mpsc::SyncSender<Result<Vec<u8>,String>>}
 fn broker()->&'static mpsc::SyncSender<Request>{static BROKER:OnceLock<mpsc::SyncSender<Request>>=OnceLock::new();BROKER.get_or_init(||{
  let(tx,rx)=mpsc::sync_channel::<Request>(16);std::thread::spawn(move||{
   let apartment=crate::media::Apartment::new();let mut captures=HashMap::<(isize,isize),Capture>::new();let mut found=Vec::new();let mut discovery=Instant::now()-Duration::from_secs(10);
@@ -143,16 +168,16 @@ fn broker()->&'static mpsc::SyncSender<Request>{static BROKER:OnceLock<mpsc::Syn
     if captures.get(&key).is_some_and(|c|c.monitor_capture&&c.target.rect!=r){captures.remove(&key);}
     if !captures.contains_key(&key){let mut source=target.clone();source.monitor=m;source.rect=r;captures.insert(key,Capture::new(source)?);}
     let capture=captures.get_mut(&key).unwrap();
-    if let Err(e)=capture.sample(){captures.remove(&key);return Err(e)}capture.crop(request.rect)
+    if let Err(e)=capture.sample(){captures.remove(&key);return Err(e)}capture.crop(request.rect,request.over_apps)
    })();let _=request.reply.send(answer);
   }
  });tx
 })}
-fn read(rect:[i32;4])->Result<Vec<u8>,String>{let(tx,rx)=mpsc::sync_channel(1);broker().try_send(Request{rect,reply:tx}).map_err(|_|"Captura ocupada; tentando novamente".to_string())?;rx.recv_timeout(Duration::from_secs(3)).map_err(|_|"Tempo de captura excedido".to_string())?}
+fn read(rect:[i32;4],over_apps:bool)->Result<Vec<u8>,String>{let(tx,rx)=mpsc::sync_channel(1);broker().try_send(Request{rect,over_apps,reply:tx}).map_err(|_|"Captura ocupada; tentando novamente".to_string())?;rx.recv_timeout(Duration::from_secs(3)).map_err(|_|"Tempo de captura excedido".to_string())?}
 #[cfg(test)]pub static TEST_FIXTURE:std::sync::atomic::AtomicIsize=std::sync::atomic::AtomicIsize::new(0);
 #[cfg(test)]fn fixture_covers(rect:[i32;4])->bool{let h=TEST_FIXTURE.load(std::sync::atomic::Ordering::Relaxed);h!=0&&crate::native::rect(h).ok().is_some_and(|r|intersection(r,rect)==Some(rect))}
 #[cfg(not(test))]fn fixture_covers(_rect:[i32;4])->bool{false}
-#[cfg(test)]pub fn test_frame(rect:[i32;4])->Result<Vec<u8>,String>{read(rect)}
+#[cfg(test)]pub fn test_frame(rect:[i32;4])->Result<Vec<u8>,String>{read(rect,false)}
 pub fn set_excluded(hwnd:isize,excluded:bool)->Result<(),String>{unsafe{
  let h=hwnd as *mut c_void;let target=if excluded{0x11}else{0};let mut value=0;
  if GetWindowDisplayAffinity(h,&mut value)==0||value!=target{if SetWindowDisplayAffinity(h,target)==0{return Err("Windows não permitiu configurar a exclusão do vidro da captura".into())}}
@@ -160,16 +185,17 @@ pub fn set_excluded(hwnd:isize,excluded:bool)->Result<(),String>{unsafe{
 }}
 #[tauri::command]
 pub async fn live_wallpaper_frame(app:tauri::AppHandle,window:tauri::WebviewWindow,bounds:[f64;4])->Result<tauri::ipc::Response,String>{
- if !["clock","analog","calendar","notes","system","fusion","topbar","island"].contains(&window.label()){return Err("Superfície não autorizada".into())}
+ if !["clock","analog","calendar","notes","system","media","weather","gallery","storage","fusion","topbar","island"].contains(&window.label()){return Err("Superfície não autorizada".into())}
  if bounds.iter().any(|v|!v.is_finite()||v.abs()>32768.0)||bounds[2]<=0.0||bounds[3]<=0.0{return Err("Recorte inválido".into())}
- for(label,w)in app.webview_windows(){if ["clock","analog","calendar","notes","system","fusion","topbar","island","control-center"].contains(&label.as_str()){
+ for(label,w)in app.webview_windows(){if ["clock","analog","calendar","notes","system","media","weather","gallery","storage","fusion","topbar","island","control-center"].contains(&label.as_str()){
   set_excluded(crate::handle(&w)?,true)?;
  }}
  let screen=crate::native::rect(crate::handle(&window)?)?;let scale=window.scale_factor().map_err(|e|e.to_string())?;
  let r=[screen[0]+(bounds[0]*scale).floor()as i32,screen[1]+(bounds[1]*scale).floor()as i32,(bounds[2]*scale).ceil()as i32,(bounds[3]*scale).ceil()as i32];
  let rect=intersection(r,screen).ok_or("Recorte fora da janela")?;
  if i64::from(rect[2])*i64::from(rect[3])>16_000_000{return Err("Superfície grande demais para captura".into())}
- tauri::async_runtime::spawn_blocking(move||read(rect).map(tauri::ipc::Response::new)).await.map_err(|e|e.to_string())?
+ let over_apps=matches!(window.label(),"island"|"topbar");
+ tauri::async_runtime::spawn_blocking(move||read(rect,over_apps).map(tauri::ipc::Response::new)).await.map_err(|e|e.to_string())?
 }
 pub fn maintain_affinity(app:&tauri::AppHandle){
  let state=app.state::<crate::State>();let layout=state.layout.lock().unwrap();
@@ -186,10 +212,31 @@ pub fn maintain_affinity(app:&tauri::AppHandle){
   let mut data=vec![255;20+4*3*4];let header=data[..20].to_vec();mask_applications(&mut data,[-4,2,4,3],&[[-3,2,2,2]]);
   assert_eq!(&data[..20],header.as_slice());assert_eq!(&data[20..24],&[255;4]);assert_eq!(&data[24..32],&[0;8]);assert_eq!(&data[20+2*4*4..],&[255;16]);
  }
+ #[test]fn masks_large_white_capture_placeholders_but_preserves_small_glints(){
+  let(w,h)=(96usize,72usize);let mut frame=vec![0u8;20+w*h*4];
+  for p in frame[20..].chunks_exact_mut(4){p.copy_from_slice(&[110,14,22,255])}
+  for y in 13..51{for x in 18..61{let p=20+(y*w+x)*4;frame[p..p+4].copy_from_slice(&[255,255,255,255])}}
+  for y in 3..8{for x in 3..8{let p=20+(y*w+x)*4;frame[p..p+4].copy_from_slice(&[255,255,255,255])}}
+  mask_capture_placeholders(&mut frame,w,h,false);
+  assert_eq!(&frame[20+(20*w+30)*4..20+(20*w+30)*4+4],&[0,0,0,0]);
+  assert_eq!(&frame[20+(4*w+4)*4..20+(4*w+4)*4+4],&[255,255,255,255]);
+  assert_eq!(&frame[20+(20*w+70)*4..20+(20*w+70)*4+4],&[110,14,22,255]);
+ }
+ #[test]fn island_preserves_dark_application_pixels_but_discards_white_exclusion_block(){
+  let rect=[0,0,96,72];let mut frame=vec![0u8;20+96*72*4];
+  for p in frame[20..].chunks_exact_mut(4){p.copy_from_slice(&[38,39,45,255])}
+  for y in 10..60{for x in 10..80{let p=20+(y*96+x)*4;frame[p..p+4].copy_from_slice(&[255,255,255,255])}}
+  apply_capture_policy(&mut frame,rect,&[rect],true);
+  assert_eq!(&frame[20+(4*96+4)*4..20+(4*96+4)*4+4],&[38,39,45,255]);
+  assert_eq!(&frame[20+(20*96+20)*4..20+(20*96+20)*4+4],&[0,0,0,0]);
+  let mut widget=vec![0u8;20+96*72*4];for p in widget[20..].chunks_exact_mut(4){p.copy_from_slice(&[38,39,45,255])}
+  apply_capture_policy(&mut widget,rect,&[rect],false);
+  assert_eq!(&widget[20+(4*96+4)*4..20+(4*96+4)*4+4],&[0,0,0,0]);
+ }
  #[test]#[ignore="Captures live wallpaper with application masking; keeps pixels in memory"]fn reads_real_wallpaper_frames(){
   let found=targets();assert!(!found.is_empty(),"No Wallpaper Engine desktop host found");let r=found[0].rect;println!("Wallpaper host {:?}",found[0]);
   let mut previous:Option<Vec<u8>>=None;let mut count=0;let mut changed=false;let mut visible=0;
-  for _ in 0..40{match read(r){Ok(data)=>{count+=1;visible=data[20..].chunks_exact(4).filter(|p|p[3]>0).count();if let Some(old)=&previous{changed|=old[20..].chunks_exact(4).zip(data[20..].chunks_exact(4)).any(|(a,b)|a[3]==255&&b[3]==255&&a[..3]!=b[..3])}previous=Some(data)},Err(e)=>println!("Capture pending/error: {e}")}if count>=3&&changed{break}std::thread::sleep(Duration::from_millis(100));}
+  for _ in 0..40{match read(r,false){Ok(data)=>{count+=1;visible=data[20..].chunks_exact(4).filter(|p|p[3]>0).count();if let Some(old)=&previous{changed|=old[20..].chunks_exact(4).zip(data[20..].chunks_exact(4)).any(|(a,b)|a[3]==255&&b[3]==255&&a[..3]!=b[..3])}previous=Some(data)},Err(e)=>println!("Capture pending/error: {e}")}if count>=3&&changed{break}std::thread::sleep(Duration::from_millis(100));}
   assert!(count>=3,"No frames delivered");println!("{count} frames; visible wallpaper pixels={visible}; pixel changes={changed}");assert!(visible>0,"Desktop is fully occluded; show wallpaper to validate movement");assert!(changed,"Wallpaper frame pixels did not change; check Wallpaper Engine playback/pause rules");
  }
 }

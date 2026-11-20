@@ -4,8 +4,9 @@
 .topbar.topbar[data-optical=true],.topbar.topbar[data-optical=true] .bar-segment{background:transparent;box-shadow:none}
 .topbar .bar-items{position:relative;z-index:1}
 .island-host{position:relative;isolation:isolate}
-.island-host>.surface-optics{z-index:-1}
-.island.appearance-liquid,.island.appearance-adaptive{background:transparent;text-shadow:0 1px 3px #000b}
+.island-host>.surface-optics{z-index:0}
+.island-host>.island{z-index:1}
+.island-host>.island.appearance-liquid,.island-host>.island.appearance-adaptive{background:transparent;text-shadow:0 1px 3px #000b}
 .unified-widget{position:relative;width:100%;height:100%;isolation:isolate;color:white;text-shadow:0 1px 3px #0009}
 .unified-widget>.widget-surface{position:relative;z-index:1;border-radius:32px;overflow:hidden;background:transparent}
 .island:is(.appearance-liquid,.appearance-adaptive) :is(.island-sheen,.island-edge,.island-caustic){display:none}

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Serialize, Deserialize)]
+pub struct CalendarEvent {pub id:String,pub date:String,pub time:String,pub title:String,pub reminder:bool}
+#[derive(Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub x: i32,
@@ -24,6 +26,22 @@ pub struct Settings {
     pub frost: f64,
     pub quality: String,
     pub motion: bool,
+    pub media_layout: String,
+    pub media_visualizer: bool,
+    pub weather_city: String,
+    pub weather_latitude: Option<f64>,
+    pub weather_longitude: Option<f64>,
+    pub weather_unit: String,
+    pub weather_refresh: u32,
+    pub gallery_interval: u32,
+    pub gallery_fit: String,
+    pub gallery_random: bool,
+    pub gallery_frame: bool,
+    pub storage_devices: Vec<String>,
+    pub system_layout: String,
+    pub system_metrics: Vec<String>,
+    pub calendar_events: Vec<CalendarEvent>,
+    pub notes_style: String,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -50,6 +68,13 @@ impl Default for Settings {
             frost: 0.35,
             quality: "balanced".into(),
             motion: true,
+            media_layout: "horizontal".into(), media_visualizer: false,
+            weather_city: String::new(), weather_latitude: None, weather_longitude: None,
+            weather_unit: "celsius".into(), weather_refresh: 30,
+            gallery_interval: 10, gallery_fit: "cover".into(), gallery_random: false, gallery_frame: true,
+            storage_devices: Vec::new(), system_layout: "expanded".into(),
+            system_metrics: vec!["cpu".into(),"memory".into(),"network".into()],
+            calendar_events: Vec::new(), notes_style: "plain".into(),
         }
     }
 }
@@ -102,11 +127,26 @@ impl Settings {
         {
             return Err("Parâmetros fora do intervalo permitido".into());
         }
+        if !["compact","horizontal","expanded"].contains(&self.media_layout.as_str())
+            || !["celsius","fahrenheit"].contains(&self.weather_unit.as_str())
+            || self.weather_city.len()>120
+            || self.weather_latitude.is_some_and(|v|!v.is_finite()||!(-90.0..=90.0).contains(&v))
+            || self.weather_longitude.is_some_and(|v|!v.is_finite()||!(-180.0..=180.0).contains(&v))
+            || !(5..=180).contains(&self.weather_refresh)
+            || !(3..=3600).contains(&self.gallery_interval)
+            || !["cover","contain"].contains(&self.gallery_fit.as_str())
+            || self.storage_devices.len()>32 || self.storage_devices.iter().any(|s|s.len()>200)
+            || !["compact","expanded"].contains(&self.system_layout.as_str())
+            || self.system_metrics.len()>8 || self.system_metrics.iter().any(|s|!["cpu","memory","network","frequency"].contains(&s.as_str()))
+            || !["plain","paper","minimal"].contains(&self.notes_style.as_str())
+            || self.calendar_events.len()>200
+            || self.calendar_events.iter().any(|e| e.id.len()>50||e.title.is_empty()||e.title.len()>160||e.date.len()!=10||!e.date.bytes().all(|b|b.is_ascii_digit()||b==b'-')||e.time.len()>5||!e.time.bytes().all(|b|b.is_ascii_digit()||b==b':'))
+        {return Err("Configuracao do widget invalida".into())}
         Ok(())
     }
 }
 
-pub const IDS: [&str; 5] = ["clock", "analog", "calendar", "notes", "system"];
+pub const IDS: [&str; 9] = ["clock", "analog", "calendar", "notes", "system", "media", "weather", "gallery", "storage"];
 pub fn valid_id(id: &str) -> Result<(), String> {
     if IDS.contains(&id) {
         Ok(())
@@ -135,8 +175,8 @@ impl Default for Layout {
         let mut widgets = std::collections::BTreeMap::new();
         for (i, id) in IDS.iter().enumerate() {
             let mut s = Settings::default();
-            s.x = 100 + (i as i32 % 2) * 400;
-            s.y = 100 + (i as i32 / 2) * 290;
+            s.x = 60 + (i as i32 % 3) * 440;
+            s.y = 80 + (i as i32 / 3) * 300;
             match *id {
                 "analog" => {
                     s.width = 240;
@@ -155,6 +195,10 @@ impl Default for Layout {
                     s.width = 380;
                     s.height = 340;
                 }
+                "media" => {s.width=380;s.height=240;}
+                "weather" => {s.width=400;s.height=360;}
+                "gallery" => {s.width=400;s.height=300;}
+                "storage" => {s.width=380;s.height=300;}
                 _ => {}
             }
             widgets.insert(id.to_string(), s);
@@ -220,6 +264,9 @@ impl Layout {
                 // First shared-material migration keeps an active widget's existing glass.
                 layout.sync_theme=true;
                 layout.sync_material(&legacy_source)?;
+            } else if layout.sync_theme {
+                let source=layout.glass_source.clone();
+                layout.sync_material(&source)?;
             }
         } else {
             let mut clock: Settings = serde_json::from_value(value).map_err(|e| e.to_string())?;
@@ -323,7 +370,7 @@ mod tests {
         let layout =
             Layout::load(br##"{"x":515,"y":230,"tint":"#ff8844","shade":0.55,"edit":true}"##)
                 .unwrap();
-        assert_eq!(layout.widgets.len(), 5);
+        assert_eq!(layout.widgets.len(), 9);
         assert_eq!(layout.widgets["clock"].x, 515);
         assert_eq!(layout.widgets["clock"].tint, "#ff8844");
         assert!(layout.widgets["clock"].enabled);
@@ -350,5 +397,14 @@ mod tests {
         let mut s = Settings::default();
         s.width = 0;
         assert!(s.validate().is_err());
+    }
+    #[test]
+    fn expands_old_layout_without_losing_notes_or_material(){
+        let layout=Layout::load(br##"{"version":2,"glass_source":"notes","sync_theme":true,"widgets":{"notes":{"note":"Preservar","tint":"#aabbcc","enabled":true}}}"##).unwrap();
+        assert_eq!(layout.widgets.len(),9);
+        assert_eq!(layout.widgets["notes"].note,"Preservar");
+        assert_eq!(layout.widgets["weather"].tint,"#aabbcc");
+        assert!(!layout.widgets["media"].enabled);
+        assert!(layout.widgets["calendar"].calendar_events.is_empty());
     }
 }
