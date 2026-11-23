@@ -1,4 +1,18 @@
-# Liquid Desktop 0.10.1
+# Liquid Desktop 0.11.1
+
+## Barra Principal e cantos discretos — 0.11.1
+
+O modo **Principal** agora esconde a barra original do Explorer no monitor escolhido enquanto a barra Liquid estiver ativa; as barras dos outros monitores permanecem. Um processo auxiliar acompanha o aplicativo e restaura a barra original se ele fechar inesperadamente. Desativar a barra, mudar para Coexistir/Sobrepor ou sair normalmente também a restaura. A atualização migra uma vez o modo Coexistir e o raio padrão antigos para Principal e raio 10; depois disso, suas escolhas permanecem. O Explorer e os arquivos do Windows continuam intactos. A barra Liquid ainda não reproduz os ícones de terceiros da bandeja do sistema.
+
+## Barra de tarefas Liquid Glass — 0.11.0
+
+Ative **Barra de tarefas** no painel. A nova superfície nativa mostra aplicativos abertos e atalhos fixados, ícones obtidos do Windows quando disponíveis, indicação de foco/minimização e múltiplas janelas. Clique para abrir, focar ou minimizar; clique com o botão direito para abrir outra janela, fechar ou fixar/desafixar. Arraste os ícones fixados para reordenar. Atalhos `.lnk` já fixados na barra do Windows são importados; também é possível fixar um app aberto ou informar o caminho de um `.exe`/`.lnk` no painel.
+
+A barra tem segmentos de Iniciar/Pesquisa/Visão de tarefas, aplicativos e status. Hora, data, conectividade, bateria e volume vêm do Windows; o indicador de mídia usa GSMTC. O clima opcional usa a cidade configurada no widget Clima e a Open-Meteo. Notificações e controles rápidos usam os atalhos nativos do Windows; o botão de áudio abre o Control Center do Liquid Desktop. Ícones de terceiros da área de notificação não são lidos, pois o Windows não oferece uma API pública estável para reproduzir a bandeja completa.
+
+**Coexistir** fica acima da barra original, respeitando a área útil do monitor. **Sobrepor** fica na borda inferior e permite ocultar automaticamente a barra do Windows. **Principal (experimental)** ocupa a borda inferior e esconde a barra original enquanto o Liquid Desktop estiver ativo. O Explorer permanece ativo. A barra original volta ao desativar o modo, sair ou após uma falha do aplicativo. O app não troca o shell, não injeta código no Explorer e não modifica arquivos do sistema.
+
+Escolha monitor, largura, altura, raio, tamanho/ampliação dos ícones, ordem e visibilidade dos módulos, ocultação automática e preset de material. **Mesmo material dos widgets** usa a lente WebGL2 compartilhada, inclusive frames do Wallpaper Engine. O contorno nativo acompanha os três segmentos: cliques nos espaços vazios passam para o aplicativo atrás. Tela cheia oculta a barra quando configurado. A 0.11.0 cria uma barra em um monitor por vez; apps protegidos, janelas sem título e ícones sem representação acessível podem não aparecer. Atalhos `.lnk` e o executável aberto podem aparecer separadamente quando o Windows não fornece um vínculo confiável entre eles.
 
 ## Correção de arraste e vidro — 0.10.1
 

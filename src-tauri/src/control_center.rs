@@ -50,7 +50,7 @@ fn power()->Option<Power>{let mut p=PowerRaw::default();if unsafe{GetSystemPower
     if unsafe{ShellExecuteW(handle(&window)?,operation.as_ptr(),file.as_ptr(),std::ptr::null(),std::ptr::null(),1)}<=32{return Err("Não foi possível abrir as Configurações do Windows".into())}Ok(())
 }
 #[tauri::command]pub async fn toggle_center(app:tauri::AppHandle,window:tauri::WebviewWindow)->Result<(),String>{
-    if window.label()!="topbar"{return Err("Abra pela Top Bar".into())}
+    if !["topbar","taskbar"].contains(&window.label()){return Err("Abra pela barra".into())}
     tauri::async_runtime::spawn_blocking(move||{
         let runtime=app.state::<Runtime>();let _lock=runtime.lifecycle.lock().unwrap();
         let center=if let Some(w)=app.get_webview_window("control-center"){w}else{tauri::WebviewWindowBuilder::new(&app,"control-center",tauri::WebviewUrl::App("index.html?surface=control-center".into())).title("Liquid Control Center").inner_size(360.0,440.0).transparent(true).decorations(false).shadow(false).skip_taskbar(true).resizable(false).visible(false).focused(false).build().map_err(|e|e.to_string())?};
@@ -61,7 +61,9 @@ fn power()->Option<Power>{let mut p=PowerRaw::default();if unsafe{GetSystemPower
             let monitor=window.current_monitor().map_err(|e|e.to_string())?.ok_or("Monitor indisponível")?;let p=monitor.position();let size=monitor.size();
             let width=((360.0*scale).round()as i32).min((size.width as i32-16).max(100));let height=((440.0*scale).round()as i32).min((size.height as i32-16).max(100));
             native::configure_desktop_window(handle(&center)?)?;
-            native::position_surface(handle(&center)?,(bar[0]+bar[2]-width).max(p.x),(bar[1]+bar[3]+(8.0*scale)as i32).min(p.y+size.height as i32-height).max(p.y),width,height,true)?;
+            let y=if window.label()=="taskbar"{let bar_height=copy.state::<crate::State>().layout.lock().unwrap().taskbar.height as f64;bar[1]+bar[3]-height-((bar_height+18.0)*scale)as i32}else{bar[1]+bar[3]+(8.0*scale)as i32};
+            let x=if window.label()=="taskbar"{native::cursor().map(|c|c[0]-width/2).unwrap_or(bar[0]+bar[2]-width)}else{bar[0]+bar[2]-width};
+            native::position_surface(handle(&center)?,x.min(p.x+size.width as i32-width).max(p.x),y.min(p.y+size.height as i32-height).max(p.y),width,height,true)?;
             native::surface_region(handle(&center)?,0,0,width,height,(26.0*scale)as i32,false)?;
             copy.emit_to("control-center","center-open",()).map_err(|e|e.to_string())?;center.show().map_err(|e|e.to_string())?;center.set_focus().map_err(|e|e.to_string())
         })();let _=tx.send(result);}).map_err(|e|e.to_string())?;rx.recv().map_err(|e|e.to_string())?

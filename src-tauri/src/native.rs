@@ -128,6 +128,9 @@ pub fn position_surface(
         Ok(())
     }
 }
+pub fn keep_surface_above(hwnd:isize)->Result<(),String>{unsafe{
+ if SetWindowPos(hwnd as Hwnd,-1isize as Hwnd,0,0,0,0,0x1|0x2|0x10|0x200)==0{Err("Falha ao manter superfície acima dos aplicativos".into())}else{Ok(())}
+}}
 /// The OS clips painting AND hit-testing to this region, including transparent margins.
 pub fn surface_region(
     hwnd: isize,
@@ -180,6 +183,17 @@ pub fn bar_region(hwnd:isize,width:i32,height:i32,gap:i32,radius:i32)->Result<()
         Ok(())
     }
 }
+/// Round caps for independently placed taskbar segments; gaps remain native hit-test holes.
+pub fn segmented_region(hwnd:isize,rects:&[[i32;4]],radius:i32)->Result<(),String>{unsafe{
+ let region=CreateRectRgn(0,0,0,0);if region.is_null(){return Err("Falha ao criar região da barra de tarefas".into())}
+ for [left,top,right,bottom] in rects{if right<=left||bottom<=top{continue}
+  let r=radius.min((right-left)/2).min((bottom-top)/2).max(1);
+  let part=CreateRoundRectRgn(*left,*top,*right+1,*bottom+1,r*2,r*2);
+  if part.is_null(){DeleteObject(region);return Err("Falha ao criar segmento da barra de tarefas".into())}
+  let result=CombineRgn(region,region,part,2);DeleteObject(part);if result==0{DeleteObject(region);return Err("Falha ao unir segmentos da barra de tarefas".into())}
+ }
+ if SetWindowRgn(hwnd as Hwnd,region,1)==0{DeleteObject(region);return Err("Falha ao aplicar região da barra de tarefas".into())}Ok(())
+}}
 pub fn scanline_region(hwnd:isize,rows:&[[i32;4]])->Result<(),String>{
     #[link(name="gdi32")]
     unsafe extern "system"{fn ExtCreateRegion(transform:*const c_void,count:u32,data:*const c_void)->Hwnd;}
@@ -519,6 +533,17 @@ mod tests {
             DeleteObject(region);
         }
     }
+    #[test]
+    #[ignore = "Creates a hidden taskbar HWND and checks click-through gaps"]
+    fn taskbar_segments_leave_native_gaps(){unsafe{
+        let null=std::ptr::null_mut();let h=CreateWindowExW(0x80,wide("STATIC").as_ptr(),wide("Taskbar region test").as_ptr(),0x80000000,0,0,900,100,null,null,null,null);
+        assert!(!h.is_null());let _cleanup=TestWindow(h);
+        segmented_region(h as isize,&[[20,20,120,76],[160,20,520,76],[560,20,800,76]],22).unwrap();
+        let region=CreateRectRgn(0,0,0,0);assert_ne!(GetWindowRgn(h,region),0);
+        for x in [70,300,700]{assert_ne!(PtInRegion(region,x,50),0)}
+        for x in [140,540,850]{assert_eq!(PtInRegion(region,x,50),0)}
+        assert_eq!(PtInRegion(region,70,5),0);DeleteObject(region);
+    }}
     #[test]
     #[ignore = "Creates a hidden island HWND and verifies its native clipping/hit region"]
     fn island_region_excludes_transparent_margins_and_tracks_expansion() {

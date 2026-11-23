@@ -166,6 +166,8 @@ pub struct Layout {
     #[serde(default)]
     pub topbar: crate::topbar::Config,
     #[serde(default)]
+    pub taskbar: crate::taskbar::Config,
+    #[serde(default)]
     pub fusion: crate::fusion::Config,
     pub widgets: std::collections::BTreeMap<String, Settings>,
 }
@@ -209,6 +211,7 @@ impl Default for Layout {
             sync_theme: true,
             island: crate::island::Config::default(),
             topbar: crate::topbar::Config::default(),
+            taskbar: crate::taskbar::Config::default(),
             fusion: crate::fusion::Config::default(),
             widgets,
         }
@@ -253,6 +256,18 @@ impl Layout {
             layout.island = saved.island;
             saved.topbar.validate()?;
             layout.topbar = saved.topbar;
+            saved.taskbar.validate()?;
+            layout.taskbar = saved.taskbar;
+            // Apply the 0.11.1 defaults once; subsequent user choices persist.
+            if !layout.taskbar.mode_migrated {
+                if layout.taskbar.radius == 23 {
+                    layout.taskbar.radius = 10;
+                }
+                if layout.taskbar.mode == "coexist" {
+                    layout.taskbar.mode = "experimental".into();
+                }
+                layout.taskbar.mode_migrated = true;
+            }
             saved.fusion.validate()?;
             layout.fusion=saved.fusion;
             for (id, settings) in saved.widgets {
@@ -281,6 +296,25 @@ impl Layout {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn taskbar_replacement_migrates_once_and_preserves_later_mode_choices() {
+        let mut old = Layout::default();
+        old.taskbar.enabled = true;
+        old.taskbar.mode = "coexist".into();
+        old.taskbar.radius = 23;
+        let mut raw = serde_json::to_value(&old).unwrap();
+        raw["taskbar"].as_object_mut().unwrap().remove("mode_migrated");
+        let migrated = Layout::load(&serde_json::to_vec(&raw).unwrap()).unwrap();
+        assert_eq!(migrated.taskbar.mode, "experimental");
+        assert_eq!(migrated.taskbar.radius, 10);
+        assert!(migrated.taskbar.mode_migrated);
+        let mut chosen = migrated;
+        chosen.taskbar.mode = "coexist".into();
+        chosen.taskbar.radius = 23;
+        let restored = Layout::load(&serde_json::to_vec(&chosen).unwrap()).unwrap();
+        assert_eq!(restored.taskbar.mode, "coexist");
+        assert_eq!(restored.taskbar.radius, 23);
+    }
     #[test]
     fn shared_glass_migration_uses_active_material_and_preserves_widget_content(){
         let layout=Layout::load(br##"{"version":2,"widgets":{"analog":{"enabled":true,"tint":"#112233","static_wallpaper":false,"dispersion":0.4},"notes":{"x":540,"width":420,"note":"keep"}}}"##).unwrap();
@@ -411,7 +445,7 @@ mod tests {
     fn every_widget_window_has_native_acl(){
         let capabilities:serde_json::Value=serde_json::from_str(include_str!("../capabilities/default.json")).unwrap();
         let windows=capabilities["windows"].as_array().unwrap();
-        for id in IDS {assert!(windows.iter().any(|window|window.as_str()==Some(id)),"missing ACL for {id}")}
+        for id in IDS.into_iter().chain(["island","topbar","taskbar","fusion","control-center"]) {assert!(windows.iter().any(|window|window.as_str()==Some(id)),"missing ACL for {id}")}
         assert!(capabilities["permissions"].as_array().unwrap().iter().any(|permission|permission.as_str()==Some("core:default")));
     }
 }

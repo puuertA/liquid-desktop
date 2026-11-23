@@ -185,22 +185,22 @@ pub fn set_excluded(hwnd:isize,excluded:bool)->Result<(),String>{unsafe{
 }}
 #[tauri::command]
 pub async fn live_wallpaper_frame(app:tauri::AppHandle,window:tauri::WebviewWindow,bounds:[f64;4])->Result<tauri::ipc::Response,String>{
- if !["clock","analog","calendar","notes","system","media","weather","gallery","storage","fusion","topbar","island"].contains(&window.label()){return Err("Superfície não autorizada".into())}
+ if !["clock","analog","calendar","notes","system","media","weather","gallery","storage","fusion","topbar","island","taskbar"].contains(&window.label()){return Err("Superfície não autorizada".into())}
  if bounds.iter().any(|v|!v.is_finite()||v.abs()>32768.0)||bounds[2]<=0.0||bounds[3]<=0.0{return Err("Recorte inválido".into())}
- for(label,w)in app.webview_windows(){if ["clock","analog","calendar","notes","system","media","weather","gallery","storage","fusion","topbar","island","control-center"].contains(&label.as_str()){
+ for(label,w)in app.webview_windows(){if ["clock","analog","calendar","notes","system","media","weather","gallery","storage","fusion","topbar","island","taskbar","control-center"].contains(&label.as_str()){
   set_excluded(crate::handle(&w)?,true)?;
  }}
  let screen=crate::native::rect(crate::handle(&window)?)?;let scale=window.scale_factor().map_err(|e|e.to_string())?;
  let r=[screen[0]+(bounds[0]*scale).floor()as i32,screen[1]+(bounds[1]*scale).floor()as i32,(bounds[2]*scale).ceil()as i32,(bounds[3]*scale).ceil()as i32];
  let rect=intersection(r,screen).ok_or("Recorte fora da janela")?;
  if i64::from(rect[2])*i64::from(rect[3])>16_000_000{return Err("Superfície grande demais para captura".into())}
- let over_apps=matches!(window.label(),"island"|"topbar");
+ let over_apps=matches!(window.label(),"island"|"topbar"|"taskbar");
  tauri::async_runtime::spawn_blocking(move||read(rect,over_apps).map(tauri::ipc::Response::new)).await.map_err(|e|e.to_string())?
 }
 pub fn maintain_affinity(app:&tauri::AppHandle){
  let state=app.state::<crate::State>();let layout=state.layout.lock().unwrap();
  let active=layout.widgets.values().any(|s|s.enabled&&!s.static_wallpaper)
-  ||((layout.topbar.enabled||layout.island.enabled)&&!layout.widgets[&layout.glass_source].static_wallpaper)
+  ||((layout.topbar.enabled||layout.island.enabled||layout.taskbar.enabled)&&!layout.widgets[&layout.glass_source].static_wallpaper)
   ||(layout.fusion.enabled&&!layout.widgets[&layout.fusion.source].static_wallpaper);
  drop(layout);if active{return}
  for(_,w)in app.webview_windows(){if let Ok(h)=crate::handle(&w){unsafe{let mut value=0;if GetWindowDisplayAffinity(h as *mut c_void,&mut value)!=0&&value==0x11{SetWindowDisplayAffinity(h as *mut c_void,0);}}}}

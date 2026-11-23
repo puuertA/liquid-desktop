@@ -1,6 +1,6 @@
 //! One invisible AppBar per occupied monitor. Never writes SPI_SETWORKAREA.
 //! All functions and owned HWNDs are confined to the application's UI thread.
-use std::{cell::RefCell, ffi::c_void, sync::atomic::{AtomicBool, Ordering}};
+use std::{cell::RefCell, ffi::c_void, sync::{Mutex,atomic::{AtomicBool, Ordering}}};
 use tauri::{Emitter, Manager};
 type Hwnd=*mut c_void;
 #[repr(C)]
@@ -13,6 +13,7 @@ type Subclass=unsafe extern "system" fn(Hwnd,u32,usize,isize,usize,usize)->isize
 unsafe extern "system" {fn SHAppBarMessage(message:u32,data:*mut AppbarData)->usize;}
 #[link(name="user32")]
 unsafe extern "system" {
+    fn FindWindowW(class:*const u16,title:*const u16)->Hwnd;
     fn CreateWindowExW(ex:u32,class:*const u16,title:*const u16,style:u32,x:i32,y:i32,w:i32,h:i32,parent:Hwnd,menu:Hwnd,instance:Hwnd,param:Hwnd)->Hwnd;
     fn DestroyWindow(hwnd:Hwnd)->i32;
     fn SetWindowPos(hwnd:Hwnd,after:Hwnd,x:i32,y:i32,w:i32,h:i32,flags:u32)->i32;
@@ -28,6 +29,7 @@ const CALLBACK:u32=0x805b;
 const HOOK:usize=0x4c475741;
 static DIRTY:AtomicBool=AtomicBool::new(false);
 static RESTARTED:AtomicBool=AtomicBool::new(false);
+static SHELL_STATE:Mutex<Option<usize>>=Mutex::new(None);
 fn wide(value:&str)->Vec<u16>{value.encode_utf16().chain(Some(0)).collect()}
 fn data(hwnd:Hwnd)->AppbarData {AppbarData{size:std::mem::size_of::<AppbarData>() as u32,hwnd,callback:CALLBACK,edge:1,rect:Rect::default(),param:0}}
 unsafe extern "system" fn callback(hwnd:Hwnd,msg:u32,w:usize,l:isize,_id:usize,restart:usize)->isize {
@@ -130,7 +132,13 @@ pub fn refresh(app:&tauri::AppHandle){
 pub fn offset(x:i32,y:i32)->i32 {
     BARS.with(|bars|bars.borrow().iter().find(|b|b.request.monitor.left==x&&b.request.monitor.top==y).map_or(0,|b|b.allocated.top-y))
 }
-pub fn clear(){BARS.with(|bars|bars.borrow_mut().clear());}
+/// Optional Explorer auto-hide. A crashed app still leaves the taskbar
+/// accessible by the Windows edge gesture and system settings.
+pub fn shell_auto_hide(_hwnd:isize,enabled:bool){let mut saved=SHELL_STATE.lock().unwrap();let shell=unsafe{FindWindowW(wide("Shell_TrayWnd").as_ptr(),std::ptr::null())};if shell.is_null(){return}let mut info=data(shell);
+ if enabled{if saved.is_none(){*saved=Some(unsafe{SHAppBarMessage(4,&mut info)})}let previous=saved.unwrap_or(0);let current=unsafe{SHAppBarMessage(4,&mut info)};if current&1==0{info.param=(previous|1)as isize;unsafe{SHAppBarMessage(10,&mut info);}}}
+ else if let Some(previous)=saved.take(){let current=unsafe{SHAppBarMessage(4,&mut info)};if current&1!=0&&previous&1==0{info.param=previous as isize;unsafe{SHAppBarMessage(10,&mut info);}}}
+}
+pub fn clear(){let _=crate::shell_taskbar::sync(None);shell_auto_hide(0,false);BARS.with(|bars|bars.borrow_mut().clear());}
 
 #[cfg(test)]
 mod tests {

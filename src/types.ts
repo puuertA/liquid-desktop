@@ -14,7 +14,7 @@ export type Settings = {
   storage_devices:string[]; system_layout:'compact'|'expanded'; system_metrics:string[];
   calendar_events:CalendarEvent[]; notes_style:'plain'|'paper'|'minimal';
 };
-export type Layout = {version:number; glass_source:WidgetId; sync_theme:boolean; island:import('./island/types').IslandConfig; topbar:import('./topbar/types').TopBarConfig; fusion:import('./fusion/types').FusionConfig; widgets:Record<WidgetId,Settings>};
+export type Layout = {version:number; glass_source:WidgetId; sync_theme:boolean; island:import('./island/types').IslandConfig; topbar:import('./topbar/types').TopBarConfig; taskbar:import('./taskbar/types').TaskbarConfig; fusion:import('./fusion/types').FusionConfig; widgets:Record<WidgetId,Settings>};
 export type Monitor = {id:string;rect:[number,number,number,number];image:string|null;error:string|null};
 export type Wallpaper = {mode:number;color:number;monitors:Monitor[]};
 export type SystemSnapshot = {cpu:number|null;cpu_frequency_mhz:number|null;memory_used:number;memory_total:number;download:number|null;upload:number|null;interfaces:number;sequence:number};

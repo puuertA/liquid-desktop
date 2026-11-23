@@ -1,6 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod island;
 mod topbar;
+mod taskbar;
+mod shell_taskbar;
 mod workarea;
 mod fusion;
 mod control_center;
@@ -115,7 +117,7 @@ fn persist(app: &tauri::AppHandle, layout: &Layout) -> Result<(), String> {
 }
 fn publish(app: &tauri::AppHandle, id: &str, layout: &Layout) -> Result<(), String> {
     let _=app.emit_to("fusion","fusion-refresh",());
-    for surface in ["island","topbar"] {let _=app.emit_to(surface,"surface-material",&layout.widgets[&layout.glass_source]);}
+    for surface in ["island","topbar","taskbar"] {let _=app.emit_to(surface,"surface-material",&layout.widgets[&layout.glass_source]);}
     app.emit_to(id, "settings", &layout.widgets[id])
         .map_err(|e| e.to_string())?;
     app.emit_to("main", "layout", layout)
@@ -123,7 +125,7 @@ fn publish(app: &tauri::AppHandle, id: &str, layout: &Layout) -> Result<(), Stri
 }
 #[tauri::command]
 fn surface_material(app:tauri::AppHandle,window:tauri::WebviewWindow)->Result<Settings,String>{
-    if !["island","topbar"].contains(&window.label()){return Err("Superfície não autorizada".into())}
+    if !["island","topbar","taskbar"].contains(&window.label()){return Err("Superfície não autorizada".into())}
     let state=app.state::<State>();let layout=state.layout.lock().unwrap();Ok(layout.widgets[&layout.glass_source].clone())
 }
 #[tauri::command]
@@ -498,6 +500,10 @@ fn finish_drag(
     publish(&app, id, &next)
 }
 fn main() {
+    let arguments: Vec<String> = std::env::args().collect();
+    if shell_taskbar::guardian_process(&arguments) {
+        return;
+    }
     if std::env::args().any(|a| a == "--diagnose") {
         let report = match wallpaper::read() {
             Ok(w) => {
@@ -596,6 +602,7 @@ fn main() {
             });
             app.manage(island::Runtime::default());
             app.manage(topbar::Runtime::default());
+            app.manage(taskbar::Runtime::default());
             app.manage(fusion::Runtime::default());
             app.manage(control_center::Runtime::default());
             let restore_app = app.handle().clone();
@@ -623,6 +630,11 @@ fn main() {
                         let _=restore_app.emit_to("main","widget-error",error);
                     }
                 }
+                {
+                    let runtime=restore_app.state::<taskbar::Runtime>();
+                    let _lifecycle=runtime.lifecycle.lock().unwrap();
+                    if let Err(error)=taskbar::create(&restore_app){let _=restore_app.emit_to("main","widget-error",error);}
+                }
                 for id in restore {
                     if let Err(error) = create_window(&restore_app, &id) {
                         let _ =
@@ -647,6 +659,7 @@ fn main() {
                         let _ = native::maintain_desktop_layers(&handles);
                         island::maintain(&task_app);
                         let _=topbar::maintain(&task_app);
+                        let _=taskbar::maintain(&task_app);
                         let _=fusion::maintain(&task_app);live_wallpaper::maintain_affinity(&task_app);
                     })
                     .is_err()
@@ -685,6 +698,15 @@ fn main() {
             topbar::topbar_volume,
             topbar::topbar_open_panel,
             topbar::update_topbar,
+            taskbar::taskbar_snapshot,
+            taskbar::taskbar_app_action,
+            taskbar::taskbar_window_focus,
+            taskbar::taskbar_shortcut,
+            taskbar::taskbar_pin,
+            taskbar::taskbar_panel_pin,
+            taskbar::taskbar_reorder,
+            taskbar::taskbar_region,
+            taskbar::update_taskbar,
             island::island_monitors,
             island::update_island,
             island::island_snapshot,

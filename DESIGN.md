@@ -1,5 +1,11 @@
 # Liquid Desktop — linguagem visual
 
+## Barra de tarefas 0.11.1
+
+Três lentes independentes ocupam o rodapé: ações à esquerda, aplicativos ao centro e estado do sistema à direita. Altura padrão 56 unidades, raio 10 e intervalo 8. A largura central responde à quantidade de apps; o modo expandido usa o espaço disponível. Os ícones variam de tamanho conforme a distância do ponteiro, com GSAP apenas durante a interação. Linha curta distingue app aberto de app ativo, e um segundo marcador sinaliza múltiplas janelas. Texto, ícones e menus ficam acima do shader e preservam contraste.
+
+`SurfaceGlass` e `FusionGlass` desenham refração, separação cromática, borda convexa e reflexo com os mesmos parâmetros das outras superfícies. O preset compartilhado acompanha o material dos widgets. Menu contextual usa uma superfície compacta e legível; a região Win32 inclui o menu somente enquanto ele está aberto. A barra retraída deixa uma pequena alça no rodapé para voltar sem interceptar o resto da tela. Movimento reduzido desativa a ampliação e a entrada animada.
+
 ## Coleção 0.10.0
 
 Os novos widgets usam a mesma lente e a mesma tipografia dos originais. O conteúdo tem prioridade: capa e faixa, previsão, fotografia ou unidade de armazenamento aparecem antes dos controles. Controles secundários ficam dentro da superfície, com contraste legível sobre wallpapers claros e escuros. Fotos podem ocupar toda a área sem moldura; quando a moldura está ativa, ela usa o renderer óptico existente. Animações de troca usam GSAP apenas quando há mudança de conteúdo e respeitam a preferência por movimento reduzido. Nenhum gráfico de áudio ou sensor apresenta dados simulados.
